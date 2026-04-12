@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum AlbumVisibility {
+  PUBLIC
+  PROTECTED
+  PRIVATE
+}
+
+model User {
+  id              String    @id @default(cuid())
+  username        String    @unique
+  email           String    @unique
+  password        String
+  role            UserRole  @default(USER)
+  mustChangePassword Boolean @default(false)
+  storageLimit    BigInt    @default(536870912)
+  usedStorage     BigInt    @default(0)
+  bio             String?
+  socialLinks     Json?
+  groupId         String?
+  group           UserGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  emailVerifiedAt DateTime?
+  images          Image[]
+  albums          Album[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([groupId])
+}
+
+model UserGroup {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  storageLimit BigInt
+  users        User[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Album {
+  id           String          @id @default(cuid())
+  shortId      String?         @unique
+  title        String
+  description  String?
+  category     String?
+  visibility   AlbumVisibility @default(PUBLIC)
+  passwordHash String?
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  images       Image[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([userId])
+}
+
+model Image {
+  id         String   @id @default(cuid())
+  storageKey String   @unique
+  cdnUrl     String
+  fileSize   BigInt
+  userId     String
+  albumId    String?
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album      Album?   @relation(fields: [albumId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([albumId])
+}
+
+model EmailVerificationToken {
+  id           String   @id @default(cuid())
+  email        String
+  username     String
+  passwordHash String
+  token        String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([email])
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
