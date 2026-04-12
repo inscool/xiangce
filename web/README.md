@@ -28,6 +28,9 @@ For local development, copy `.env.example` to `.env` and fill values.
 - `NEXTAUTH_URL` Public site URL, for example `https://your-domain.com`.
 - `NEXTAUTH_SECRET` Random long secret string.
 - `APP_BASE_URL` Base URL used to build verification links.
+- `ADMIN_EMAIL` Optional bootstrap admin email.
+- `ADMIN_USERNAME` Optional bootstrap admin username.
+- `ADMIN_PASSWORD` Optional bootstrap admin password.
 
 ### SMTP
 - `SMTP_HOST`
@@ -55,6 +58,8 @@ For local development, copy `.env.example` to `.env` and fill values.
 
 If `STORAGE_DRIVER=local`, uploads use local disk storage and direct links fall back to `APP_BASE_URL` / `NEXTAUTH_URL`.
 If `STORAGE_DRIVER=s3` and `CDN_BASE_URL` is not set, the app falls back to the S3 endpoint URL automatically.
+
+Note for local storage: `LOCAL_UPLOAD_DIR` should usually be under `public/`, for example `public/uploads`, so uploaded files can be served directly by Next.js.
 
 ### Admin bootstrap (optional)
 - `ADMIN_EMAIL`
