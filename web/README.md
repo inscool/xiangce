@@ -7,6 +7,19 @@ Photo album platform with:
 - Public profile pages and album pages
 - Dashboard for albumized management and batch direct-link copy
 
+## Design Guidelines
+
+Project UI and interaction rules are documented in:
+
+- `docs/design-system.md`
+
+Use this file as the source of truth for:
+- backend Chinese UI
+- public English UI
+- album-centered workflow
+- dashboard layout rules
+- upload and batch-operation interaction patterns
+
 ## Local Development
 
 ```bash
