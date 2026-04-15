@@ -19,6 +19,7 @@ type StorageConfig =
       mode: "local";
       publicBaseUrl: string;
       uploadDir: string;
+      publicPath: string;
     }
   | {
       mode: "s3";
@@ -50,6 +51,20 @@ function ensureAbsoluteUrl(value: string, name: string) {
   }
 }
 
+function normalizeLocalPublicPath(uploadDir: string) {
+  const normalized = uploadDir.replace(/\\/g, "/").replace(/^\/+/, "");
+
+  if (normalized.startsWith("public/")) {
+    return `/${normalized.slice("public/".length)}`.replace(/\/+$/, "");
+  }
+
+  if (normalized === "public") {
+    return "";
+  }
+
+  return `/${normalized}`.replace(/\/+$/, "");
+}
+
 export async function getStorageConfig(): Promise<StorageConfig> {
   const savedStorage = await getSystemSetting<{
     driver?: string;
@@ -71,10 +86,13 @@ export async function getStorageConfig(): Promise<StorageConfig> {
       throw new Error("Please configure APP_BASE_URL or NEXTAUTH_URL before using local storage.");
     }
 
+    const uploadDir = savedStorage?.localUploadDir ?? process.env.LOCAL_UPLOAD_DIR ?? "public/uploads";
+
     return {
       mode: "local",
       publicBaseUrl: ensureAbsoluteUrl(appBaseUrl, "APP_BASE_URL"),
-      uploadDir: savedStorage?.localUploadDir ?? process.env.LOCAL_UPLOAD_DIR ?? "public/uploads",
+      uploadDir,
+      publicPath: normalizeLocalPublicPath(uploadDir),
     };
   }
 
@@ -151,6 +169,11 @@ export function buildObjectKey(userId: string, fileName: string) {
 
 export async function buildPublicUrl(key: string) {
   const config = await getStorageConfig();
+
+  if (config.mode === "local") {
+    return `${config.publicBaseUrl}${config.publicPath}/${key}`;
+  }
+
   return `${config.publicBaseUrl}/${key}`;
 }
 
