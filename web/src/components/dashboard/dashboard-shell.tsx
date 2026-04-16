@@ -5,6 +5,7 @@ import { Cog, FolderKanban, Gauge, Users } from "lucide-react";
 import { SidebarStorageMini } from "@/components/dashboard/sidebar-storage-mini";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { APP_VERSION } from "@/lib/version";
 
 export const dashboardSections = [
   { key: "dashboard", label: "仪表盘", icon: Gauge, href: "/dashboard" },
@@ -72,6 +73,7 @@ export function DashboardShell({ activeSection, user, children }: Props) {
           </div>
 
           <SidebarStorageMini usedStorage={user.usedStorage} storageLimit={user.storageLimit} />
+          <p className="mt-4 text-center text-xs text-zinc-500">版本 {APP_VERSION}</p>
         </aside>
 
         <section className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8 xl:px-10">

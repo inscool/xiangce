@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, Globe2, Link2, MessageCircleMore, PackageOpen, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { APP_VERSION } from "@/lib/version";
 
 const coreBenefits = [
   {
@@ -285,6 +286,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <footer className="pb-8 text-center text-sm text-zinc-500">当前版本 {APP_VERSION}</footer>
     </main>
   );
 }
