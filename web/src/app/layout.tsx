@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Photo Album",
-  description: "Photo album platform with auth and SMTP verification",
+  title: "Xiangce - 专业图册交付系统",
+  description: "把零散发图升级成专业相册链接，支持展示、分享与转化。",
 };
 
 export default async function RootLayout({

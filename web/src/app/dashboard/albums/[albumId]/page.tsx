@@ -51,20 +51,20 @@ export default async function DashboardAlbumDetailPage({ params }: Props) {
       <div className="rounded-2xl border border-zinc-200 bg-white px-5 py-5 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Album Workspace</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">相册工作区</p>
             <h1 className="mt-2 text-3xl font-semibold text-zinc-900">{album.title}</h1>
-            <p className="mt-1 text-zinc-600">Upload, select, move and manage images inside this album.</p>
+            <p className="mt-1 text-zinc-600">在这个相册中完成上传、选择、移动和管理图片。</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline">
               <a href={`/albums/${album.shortId ?? album.id}`} target="_blank" rel="noreferrer">
-                Public View
+                打开公开页
               </a>
             </Button>
             <AlbumUploadDialog
               albums={userAlbums.map((item) => ({ id: item.id, title: item.title }))}
               defaultAlbumId={album.id}
-              triggerLabel="Upload Images"
+              triggerLabel="上传图片"
             />
           </div>
         </div>

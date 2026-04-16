@@ -88,6 +88,10 @@ Log in and change this password immediately.
 
 ## PM2 Deployment (Baota / BT Panel)
 
+Detailed deployment steps are documented in the repository root:
+
+- `../DEPLOY_GUIDE.md`
+
 Build first:
 
 ```bash

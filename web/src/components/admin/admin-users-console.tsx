@@ -78,12 +78,12 @@ export function AdminUsersConsole({ users, groups }: Props) {
     const storageLimitMb = Number(draft.storageLimitMb);
     const usedStorageMb = Number(draft.usedStorageMb);
     if (!Number.isFinite(storageLimitMb) || storageLimitMb <= 0) {
-      setUserMessage("Storage limit must be a positive number.");
+      setUserMessage("存储上限必须是大于 0 的数字。");
       return;
     }
 
     if (!Number.isFinite(usedStorageMb) || usedStorageMb < 0) {
-      setUserMessage("Used storage must be zero or positive.");
+      setUserMessage("已用空间必须是大于等于 0 的数字。");
       return;
     }
 
@@ -102,11 +102,11 @@ export function AdminUsersConsole({ users, groups }: Props) {
 
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
-        setUserMessage(data.error ?? "Update failed.");
+        setUserMessage(data.error ?? "更新用户失败。");
         return;
       }
 
-      setUserMessage("User permissions updated.");
+      setUserMessage("用户权限已更新。");
       router.refresh();
     } finally {
       setSavingUserId(null);
@@ -116,11 +116,11 @@ export function AdminUsersConsole({ users, groups }: Props) {
   async function createGroup() {
     const storageLimitMb = Number(groupStorageLimitMb);
     if (!groupName.trim()) {
-      setUserMessage("Group name is required.");
+      setUserMessage("用户组名称不能为空。");
       return;
     }
     if (!Number.isFinite(storageLimitMb) || storageLimitMb <= 0) {
-      setUserMessage("Group storage limit must be a positive number.");
+      setUserMessage("用户组容量必须是大于 0 的数字。");
       return;
     }
 
@@ -137,12 +137,12 @@ export function AdminUsersConsole({ users, groups }: Props) {
 
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
-        setUserMessage(data.error ?? "Failed to create group.");
+        setUserMessage(data.error ?? "创建用户组失败。");
         return;
       }
 
       setGroupName("");
-      setUserMessage("User group created.");
+      setUserMessage("用户组已创建。");
       router.refresh();
     } finally {
       setCreatingGroup(false);
@@ -152,7 +152,7 @@ export function AdminUsersConsole({ users, groups }: Props) {
   async function assignUsersToGroup() {
     const userIds = Object.keys(selectedUsers);
     if (!userIds.length) {
-      setUserMessage("Select at least one user.");
+      setUserMessage("请先选择至少一个用户。");
       return;
     }
 
@@ -169,12 +169,12 @@ export function AdminUsersConsole({ users, groups }: Props) {
 
       const data = (await response.json()) as { error?: string; updated?: number };
       if (!response.ok) {
-        setUserMessage(data.error ?? "Batch assignment failed.");
+        setUserMessage(data.error ?? "批量分组失败。");
         return;
       }
 
       setSelectedUsers({});
-      setUserMessage(`Updated ${data.updated ?? userIds.length} user(s).`);
+      setUserMessage(`已更新 ${data.updated ?? userIds.length} 个用户。`);
       router.refresh();
     } finally {
       setAssigningGroup(false);

@@ -73,9 +73,9 @@ function putFileWithProgress(url: string, file: File, onProgress: (value: number
 }
 
 const visibilityLabel: Record<AlbumVisibility, string> = {
-  PUBLIC: "Public",
-  PROTECTED: "Protected",
-  PRIVATE: "Private",
+  PUBLIC: "公开",
+  PROTECTED: "加密",
+  PRIVATE: "私有",
 };
 
 type DashboardSection = "albums" | "upload" | "links";
@@ -173,11 +173,11 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
 
   async function createAlbum() {
     if (!newAlbum.title.trim()) {
-      toast.error("Name is required.");
+      toast.error("相册名称不能为空。");
       return;
     }
     if (newAlbum.visibility === "PROTECTED" && !newAlbum.password) {
-      toast.error("Password is required for protected album.");
+      toast.error("加密相册必须填写访问密码。");
       return;
     }
 
@@ -197,13 +197,13 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
 
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
-        toast.error(data.error ?? "Failed to create album.");
+        toast.error(data.error ?? "创建相册失败。");
         return;
       }
 
       setCreateOpen(false);
       setNewAlbum({ title: "", description: "", category: "", visibility: "PUBLIC", password: "" });
-      toast.success("Album created.");
+      toast.success("相册已创建。");
       router.refresh();
     } finally {
       setCreateAlbumLoading(false);
@@ -212,11 +212,11 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
 
   async function startUpload() {
     if (!uploadAlbumId) {
-      toast.error("Please choose target album before upload.");
+      toast.error("请先选择目标相册再上传。");
       return;
     }
     if (!pendingFiles.length) {
-      toast.error("Please choose files first.");
+      toast.error("请先选择图片文件。");
       return;
     }
 
@@ -242,7 +242,7 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
           if (presign.error) {
             setStorageWarning(presign.error);
           }
-          throw new Error(presign.error ?? "Failed to prepare upload.");
+          throw new Error(presign.error ?? "准备上传失败。");
         }
 
         await putFileWithProgress(presign.uploadUrl, file, (fileProgress) => {
@@ -262,18 +262,18 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
         });
         if (!completeRes.ok) {
           const completeData = (await completeRes.json()) as { error?: string };
-          throw new Error(completeData.error ?? "Failed to save upload metadata.");
+          throw new Error(completeData.error ?? "保存上传信息失败。");
         }
 
         setUploadProgress(Math.round(((i + 1) / total) * 100));
       }
 
-      toast.success("Upload completed.");
+      toast.success("上传完成。");
       setPendingFiles([]);
       setStorageWarning(null);
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Upload failed.");
+      toast.error(error instanceof Error ? error.message : "上传失败。");
     } finally {
       setUploading(false);
     }
@@ -282,7 +282,7 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
   async function moveSelectedImages() {
     const imageIds = Object.keys(selectedLibrary);
     if (!imageIds.length) {
-      toast.error("Select at least one image first.");
+      toast.error("请先至少选择一张图片。");
       return;
     }
 
@@ -296,12 +296,12 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
       const data = (await response.json()) as { error?: string; updated?: number };
 
       if (!response.ok) {
-        toast.error(data.error ?? "Failed to move images.");
+        toast.error(data.error ?? "批量移动图片失败。");
         return;
       }
 
       setSelectedLibrary({});
-      toast.success(`Moved ${data.updated ?? imageIds.length} image(s).`);
+      toast.success(`已移动 ${data.updated ?? imageIds.length} 张图片。`);
       router.refresh();
     } finally {
       setMoving(false);
@@ -312,7 +312,7 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
     const pathId = shortId ?? fallbackAlbumId;
     const link = `${window.location.origin}/albums/${pathId}`;
     await navigator.clipboard.writeText(link);
-    toast.success("Album share link copied.");
+    toast.success("相册分享链接已复制。");
   }
 
   async function moveSingleImage(imageId: string, toAlbumId: string | null) {
@@ -323,46 +323,46 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
     });
     const data = (await response.json()) as { error?: string };
     if (!response.ok) {
-      toast.error(data.error ?? "Failed to move image.");
+      toast.error(data.error ?? "移动图片失败。");
       return;
     }
 
-    toast.success("Image moved.");
+    toast.success("图片已移动。");
     router.refresh();
   }
 
   async function copyOriginal(url: string) {
     await navigator.clipboard.writeText(url);
-    toast.success("Original link copied.");
+    toast.success("原始链接已复制。");
   }
 
   async function copyHtml(url: string) {
     await navigator.clipboard.writeText(`<img src="${url}" alt="image" />`);
-    toast.success("HTML code copied.");
+    toast.success("HTML 代码已复制。");
   }
 
   async function copyMarkdown(url: string) {
     await navigator.clipboard.writeText(`![image](${url})`);
-    toast.success("Markdown code copied.");
+    toast.success("Markdown 代码已复制。");
   }
 
   async function copyAlbumLinks() {
     if (!selectedAlbum) {
-      toast.error("No album selected.");
+      toast.error("当前未选择相册。");
       return;
     }
 
     const selectedIds = Object.keys(selectedAlbumImages);
     const targets = selectedAlbum.images.filter((image) => selectedIds.includes(image.id));
     if (!targets.length) {
-      toast.error("Select images in this album first.");
+      toast.error("请先在该相册中选择图片。");
       return;
     }
 
     const links = targets.map((image) => image.cdnUrl).join("\n");
     setOutputLinks(links);
     await navigator.clipboard.writeText(links);
-    toast.success("Direct links copied.");
+    toast.success("直链已复制。");
   }
 
   async function copyCurrentAlbumSelectedLinks() {
@@ -372,14 +372,14 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
 
     const targets = selectedAlbum.images.filter((image) => selectedCurrentAlbumImageIds.includes(image.id));
     if (!targets.length) {
-      toast.error("Select images first.");
+      toast.error("请先选择图片。");
       return;
     }
 
     const links = targets.map((image) => image.cdnUrl).join("\n");
     await navigator.clipboard.writeText(links);
     setOutputLinks(links);
-    toast.success("Selected direct links copied.");
+    toast.success("已复制选中图片直链。");
   }
 
   async function copyCurrentAlbumSelectedHtml() {
@@ -389,14 +389,14 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
 
     const targets = selectedAlbum.images.filter((image) => selectedCurrentAlbumImageIds.includes(image.id));
     if (!targets.length) {
-      toast.error("Select images first.");
+      toast.error("请先选择图片。");
       return;
     }
 
     const html = targets.map((image) => `<img src="${image.cdnUrl}" alt="image" />`).join("\n");
     await navigator.clipboard.writeText(html);
     setOutputLinks(html);
-    toast.success("Selected HTML copied.");
+    toast.success("已复制选中图片 HTML 代码。");
   }
 
   async function copyCurrentAlbumSelectedMarkdown() {
@@ -406,19 +406,19 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
 
     const targets = selectedAlbum.images.filter((image) => selectedCurrentAlbumImageIds.includes(image.id));
     if (!targets.length) {
-      toast.error("Select images first.");
+      toast.error("请先选择图片。");
       return;
     }
 
     const markdown = targets.map((image) => `![image](${image.cdnUrl})`).join("\n");
     await navigator.clipboard.writeText(markdown);
     setOutputLinks(markdown);
-    toast.success("Selected Markdown copied.");
+    toast.success("已复制选中图片 Markdown 代码。");
   }
 
   async function moveCurrentAlbumSelected(toAlbumId: string | null) {
     if (!selectedCurrentAlbumImageIds.length) {
-      toast.error("Select images first.");
+      toast.error("请先选择图片。");
       return;
     }
 
@@ -429,18 +429,18 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
     });
     const data = (await response.json()) as { error?: string; updated?: number };
     if (!response.ok) {
-      toast.error(data.error ?? "Failed to move images.");
+      toast.error(data.error ?? "移动选中图片失败。");
       return;
     }
 
     setSelectedAlbumImages({});
-    toast.success(`Moved ${data.updated ?? selectedCurrentAlbumImageIds.length} image(s).`);
+    toast.success(`已移动 ${data.updated ?? selectedCurrentAlbumImageIds.length} 张图片。`);
     router.refresh();
   }
 
   async function deleteCurrentAlbumSelected() {
     if (!selectedCurrentAlbumImageIds.length) {
-      toast.error("Select images first.");
+      toast.error("请先选择图片。");
       return;
     }
 
@@ -450,9 +450,9 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
     const failed = results.filter((item) => item.status === "rejected" || !((item as PromiseFulfilledResult<Response>).value.ok));
 
     if (failed.length) {
-      toast.error(`${failed.length} image(s) failed to delete.`);
+      toast.error(`${failed.length} 张图片删除失败。`);
     } else {
-      toast.success(`${selectedCurrentAlbumImageIds.length} image(s) deleted.`);
+      toast.success(`已删除 ${selectedCurrentAlbumImageIds.length} 张图片。`);
     }
 
     setSelectedAlbumImages({});
@@ -725,14 +725,14 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
                         {cover ? (
                           <Image src={cover.cdnUrl} alt={album.title} fill className="object-cover" unoptimized />
                         ) : (
-                          <div className="flex h-full items-center justify-center text-sm text-zinc-500">No cover</div>
+                          <div className="flex h-full items-center justify-center text-sm text-zinc-500">暂无封面</div>
                         )}
                       </div>
                       <div className="space-y-2 bg-white p-4">
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <p className="font-medium text-zinc-900">{album.title}</p>
-                            <p className="text-xs text-zinc-500">{album.images.length} image(s)</p>
+                            <p className="text-xs text-zinc-500">{album.images.length} 张图片</p>
                           </div>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -742,13 +742,13 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => copyShareLink(album.shortId, album.id)}>
-                                Copy Share Link
+                                复制分享链接
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => setInlinePreviewAlbumId(album.id)}>
-                                Preview Inline
+                                内嵌预览
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
-                                <Link href={`/albums/${album.shortId ?? album.id}`}>Open Album Page</Link>
+                                <Link href={`/albums/${album.shortId ?? album.id}`}>打开相册页面</Link>
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -952,7 +952,7 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
                     onChange={(event) => setUploadAlbumId(event.target.value)}
                     className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm"
                   >
-                    <option value="">Select an album</option>
+                    <option value="">选择相册</option>
                     {albums.map((album) => (
                       <option key={album.id} value={album.id}>
                         {album.title}
@@ -975,7 +975,7 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
                     onClick={startUpload}
                   >
                     <Upload className="mr-2 h-4 w-4" />
-                    {uploading ? "Uploading..." : "Start Upload"}
+                    {uploading ? "上传中..." : "开始上传"}
                   </Button>
                 </div>
 
@@ -987,7 +987,7 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
                     onChange={(event) => setMoveAlbumId(event.target.value)}
                     className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm"
                   >
-                    <option value="">No Album</option>
+                    <option value="">不放入相册</option>
                     {albums.map((album) => (
                       <option key={album.id} value={album.id}>
                         {album.title}
@@ -995,7 +995,7 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
                     ))}
                   </select>
                   <Button type="button" onClick={moveSelectedImages} disabled={moving} className="w-full" variant="outline">
-                    {moving ? "Moving..." : "Move Selected Images"}
+                    {moving ? "移动中..." : "移动选中图片"}
                   </Button>
                 </div>
               </div>
@@ -1058,7 +1058,7 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => moveSingleImage(image.id, null)}>No Album</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => moveSingleImage(image.id, null)}>不放入相册</DropdownMenuItem>
                           {albums.map((album) => (
                             <DropdownMenuItem key={album.id} onClick={() => moveSingleImage(image.id, album.id)}>
                               {album.title}
@@ -1100,12 +1100,12 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button type="button" onClick={copyAlbumLinks} disabled={!selectedAlbum}>
-                      Copy Selected URLs
+                      复制选中链接
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
-                    <DialogTitle>Direct Link List</DialogTitle>
-                    <DialogDescription>Copy or paste these links to your external site or forum.</DialogDescription>
+                    <DialogTitle>直链列表</DialogTitle>
+                    <DialogDescription>可直接复制这些链接用于独立站、论坛或其他分发场景。</DialogDescription>
                     <textarea
                       readOnly
                       value={outputLinks}
