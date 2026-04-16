@@ -61,8 +61,10 @@ export function AlbumDetailClient({
   const [moving, setMoving] = useState(false);
   const [outputLinks, setOutputLinks] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [previewImageId, setPreviewImageId] = useState<string | null>(null);
 
   const selectedCount = Object.keys(selected).length;
+  const previewImage = images.find((image) => image.id === previewImageId) ?? null;
   const shareLink = typeof window !== "undefined"
     ? `${window.location.origin}/albums/${shortId ?? albumId}`
     : `/albums/${shortId ?? albumId}`;
@@ -102,10 +104,10 @@ export function AlbumDetailClient({
       });
       const data = (await res.json()) as { error?: string; updated?: number };
       if (!res.ok) {
-        toast.error(data.error ?? "Failed to move images.");
+        toast.error(data.error ?? "移动图片失败。");
         return;
       }
-      toast.success(`Moved ${data.updated ?? imageIds.length} image(s).`);
+      toast.success(`已移动 ${data.updated ?? imageIds.length} 张图片。`);
       setSelectMode(false);
       setSelected({});
       router.refresh();
@@ -121,7 +123,7 @@ export function AlbumDetailClient({
     const links = targets.map((img) => img.cdnUrl).join("\n");
     setOutputLinks(links);
     await navigator.clipboard.writeText(links);
-    toast.success("Direct links copied.");
+    toast.success("直链已复制。");
   }
 
   async function deleteSelected() {
@@ -138,9 +140,9 @@ export function AlbumDetailClient({
 
       const failed = results.filter((r) => r.status === "rejected" || !((r as PromiseFulfilledResult<Response>).value.ok));
       if (failed.length) {
-        toast.error(`${failed.length} image(s) failed to delete.`);
+        toast.error(`${failed.length} 张图片删除失败。`);
       } else {
-        toast.success(`${imageIds.length} image(s) deleted.`);
+        toast.success(`已删除 ${imageIds.length} 张图片。`);
       }
 
       setSelectMode(false);
@@ -173,10 +175,10 @@ export function AlbumDetailClient({
               variant="outline"
               onClick={async () => {
                 await navigator.clipboard.writeText(shareLink);
-                toast.success("Share link copied.");
+                toast.success("分享链接已复制。");
               }}
             >
-              Copy Share Link
+              复制分享链接
             </Button>
             {isOwner && (
               <Button
@@ -186,7 +188,7 @@ export function AlbumDetailClient({
                 onClick={() => enterSelectMode(images[0]?.id ?? "")}
               >
                 <CheckSquare className="mr-1.5 h-4 w-4" />
-                Select
+                多选模式
               </Button>
             )}
           </div>
@@ -207,6 +209,7 @@ export function AlbumDetailClient({
                       enterSelectMode(image.id);
                     }
                   }}
+                  onDoubleClick={() => setPreviewImageId(image.id)}
                 >
                   <div className="relative aspect-square">
                     <Image
@@ -237,9 +240,23 @@ export function AlbumDetailClient({
             })}
           </div>
         ) : (
-          <p className="text-sm text-zinc-500">No images in this album yet.</p>
+          <p className="text-sm text-zinc-500">当前相册还没有图片。</p>
         )}
       </section>
+
+      <Dialog open={Boolean(previewImage)} onOpenChange={(open) => !open && setPreviewImageId(null)}>
+        <DialogContent className="max-w-4xl">
+          {previewImage ? (
+            <div className="space-y-4">
+              <DialogTitle>图片预览</DialogTitle>
+              <DialogDescription>{previewImage.storageKey}</DialogDescription>
+              <div className="relative aspect-square overflow-hidden rounded-xl bg-zinc-100">
+                <Image src={previewImage.cdnUrl} alt="Preview" fill className="object-contain" unoptimized />
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       {selectMode && selectedCount > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-200 bg-white/95 shadow-2xl backdrop-blur-sm">
@@ -253,7 +270,7 @@ export function AlbumDetailClient({
                 <X className="h-4 w-4" />
               </button>
               <span className="text-sm font-medium text-zinc-900">
-                {selectedCount} selected
+                已选 {selectedCount} 张
               </span>
             </div>
 
@@ -261,12 +278,12 @@ export function AlbumDetailClient({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button type="button" size="sm" variant="outline" disabled={moving}>
-                    Move To Album
+                    移动到相册
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => moveSelectedTo(null)}>
-                    No Album
+                    不放入相册
                   </DropdownMenuItem>
                   {userAlbums
                     .filter((a) => a.id !== albumId)
@@ -280,24 +297,24 @@ export function AlbumDetailClient({
 
               <Button type="button" size="sm" variant="outline" onClick={copySelectedLinks} disabled={!selectedCount}>
                 <Copy className="mr-1.5 h-4 w-4" />
-                Copy Links
+                复制链接
               </Button>
 
               <Dialog>
                 <DialogTrigger asChild>
                   <Button type="button" size="sm" variant="destructive">
                     <Trash2 className="mr-1.5 h-4 w-4" />
-                    Delete
+                    删除
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogTitle>Delete {selectedCount} Image(s)?</DialogTitle>
+                  <DialogTitle>确认删除 {selectedCount} 张图片？</DialogTitle>
                   <DialogDescription>
-                    This will permanently remove {selectedCount} selected image(s). This action cannot be undone.
+                    删除后无法恢复，请确认是否继续。
                   </DialogDescription>
                   <div className="flex justify-end gap-2">
                     <Button type="button" variant="outline" onClick={() => cancelSelect()}>
-                      Cancel
+                      取消
                     </Button>
                     <Button
                       type="button"
@@ -305,7 +322,7 @@ export function AlbumDetailClient({
                       disabled={deleting}
                       onClick={deleteSelected}
                     >
-                      {deleting ? "Deleting..." : "Delete Images"}
+                      {deleting ? "删除中..." : "删除图片"}
                     </Button>
                   </div>
                 </DialogContent>
@@ -318,6 +335,7 @@ export function AlbumDetailClient({
       {outputLinks ? (
         <div className="fixed right-4 bottom-24 z-50 max-w-sm rounded-xl border border-zinc-200 bg-white p-4 shadow-xl">
           <p className="mb-2 text-sm font-medium text-zinc-900">Direct Link List</p>
+          <p className="mb-2 text-sm font-medium text-zinc-900">直链列表</p>
           <textarea
             readOnly
             value={outputLinks}
@@ -328,7 +346,7 @@ export function AlbumDetailClient({
             className="mt-2 text-xs text-zinc-500 underline"
             onClick={() => setOutputLinks("")}
           >
-            Close
+            关闭
           </button>
         </div>
       ) : null}

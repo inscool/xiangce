@@ -72,8 +72,10 @@ export function DashboardShell({ activeSection, user, children }: Props) {
             </nav>
           </div>
 
-          <SidebarStorageMini usedStorage={user.usedStorage} storageLimit={user.storageLimit} />
-          <p className="mt-4 text-center text-xs text-zinc-500">版本 {APP_VERSION}</p>
+          <div className="mt-auto pt-6">
+            <SidebarStorageMini usedStorage={user.usedStorage} storageLimit={user.storageLimit} />
+            <p className="mt-4 text-center text-xs text-zinc-500">版本 {APP_VERSION}</p>
+          </div>
         </aside>
 
         <section className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8 xl:px-10">

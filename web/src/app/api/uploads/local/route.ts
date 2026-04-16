@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { saveLocalUpload } from "@/lib/storage/local";
 import { assertAlbumOwnership } from "@/lib/storage/quota";
 import { buildObjectKey, buildPublicUrl, getStorageConfig } from "@/lib/storage/s3";
+import { getSystemSetting } from "@/lib/system-settings";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -21,16 +22,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Local upload endpoint only works in local storage mode." }, { status: 400 });
     }
 
+    const savedStorage = await getSystemSetting<{ localUploadDir?: string }>("storage");
+    const uploadDir = savedStorage?.localUploadDir ?? process.env.LOCAL_UPLOAD_DIR ?? "public/uploads";
+    if (!uploadDir.startsWith("public/")) {
+      return NextResponse.json(
+        { error: "本地存储目录必须设置为 public/ 开头，例如 public/uploads。" },
+        { status: 400 },
+      );
+    }
+
     const formData = await request.formData();
     const albumId = String(formData.get("albumId") ?? "");
     const file = formData.get("file");
 
     if (!albumId) {
-      return NextResponse.json({ error: "Album is required." }, { status: 400 });
+      return NextResponse.json({ error: "请选择目标相册。" }, { status: 400 });
     }
 
     if (!(file instanceof File)) {
-      return NextResponse.json({ error: "Image file is required." }, { status: 400 });
+      return NextResponse.json({ error: "请选择图片文件。" }, { status: 400 });
     }
 
     await assertAlbumOwnership(userId, albumId);
@@ -45,12 +55,12 @@ export async function POST(request: Request) {
       });
 
       if (!user) {
-        throw new Error("User not found.");
+        throw new Error("用户不存在。");
       }
 
       const nextUsed = user.usedStorage + BigInt(file.size);
       if (nextUsed > user.storageLimit) {
-        throw new Error("Storage quota exceeded.");
+        throw new Error("存储空间不足。");
       }
 
       const created = await tx.image.create({
@@ -81,8 +91,8 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to upload file.";
-    const status = message === "Storage quota exceeded." ? 409 : 500;
+    const message = error instanceof Error ? error.message : "上传文件失败。";
+    const status = message === "存储空间不足。" ? 409 : 500;
     return NextResponse.json({ error: message }, { status });
   }
 }

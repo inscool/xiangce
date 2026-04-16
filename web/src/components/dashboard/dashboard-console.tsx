@@ -109,25 +109,18 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
   const [moveAlbumId, setMoveAlbumId] = useState<string>(albums[0]?.id ?? "");
   const [moving, setMoving] = useState(false);
 
-  const [selectedAlbumId, setSelectedAlbumId] = useState<string>(focusAlbumId ?? albums[0]?.id ?? "");
   const [selectedAlbumImages, setSelectedAlbumImages] = useState<Record<string, true>>({});
   const [outputLinks, setOutputLinks] = useState("");
-  const [inlinePreviewAlbumId, setInlinePreviewAlbumId] = useState<string | null>(null);
+  const [inlinePreviewAlbumId] = useState<string | null>(null);
   const [albumSearch, setAlbumSearch] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedVisibilities, setSelectedVisibilities] = useState<AlbumVisibility[]>([]);
   const [albumSort, setAlbumSort] = useState<"latest" | "name" | "imageCount">("latest");
 
   const selectedAlbum = useMemo(
-    () => albums.find((album) => album.id === selectedAlbumId) ?? albums[0] ?? null,
-    [albums, selectedAlbumId],
+    () => (focusAlbumId ? albums.find((album) => album.id === focusAlbumId) ?? albums[0] ?? null : albums[0] ?? null),
+    [albums, focusAlbumId],
   );
-
-  useEffect(() => {
-    if (focusAlbumId) {
-      setSelectedAlbumId(focusAlbumId);
-    }
-  }, [focusAlbumId]);
 
   const inlinePreviewAlbum = useMemo(
     () => (inlinePreviewAlbumId ? albums.find((album) => album.id === inlinePreviewAlbumId) ?? null : null),
@@ -500,11 +493,11 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <AlbumUploadDialog
-                  albums={albums.map((album) => ({ id: album.id, title: album.title }))}
-                  defaultAlbumId={selectedAlbum?.id}
-                  triggerLabel="上传图片"
-                />
+                  <AlbumUploadDialog
+                    albums={albums.map((album) => ({ id: album.id, title: album.title }))}
+                    defaultAlbumId={focusAlbumId ?? selectedAlbum?.id}
+                    triggerLabel="上传图片"
+                  />
                 {selectedAlbum ? (
                   <Button type="button" variant="outline" onClick={() => copyShareLink(selectedAlbum.shortId, selectedAlbum.id)}>
                     复制分享链接
@@ -744,9 +737,6 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
                               <DropdownMenuItem onClick={() => copyShareLink(album.shortId, album.id)}>
                                 复制分享链接
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => setInlinePreviewAlbumId(album.id)}>
-                                内嵌预览
-                              </DropdownMenuItem>
                               <DropdownMenuItem asChild>
                                 <Link href={`/albums/${album.shortId ?? album.id}`}>打开相册页面</Link>
                               </DropdownMenuItem>
@@ -767,116 +757,6 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
               {!filteredAlbums.length ? (
                 <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-sm text-zinc-500">
                   当前筛选条件下没有匹配的相册。
-                </div>
-              ) : null}
-
-              {selectedAlbum ? (
-                <div className="space-y-4 rounded-3xl border border-zinc-200 bg-white px-5 py-5 shadow-sm lg:px-6">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <h3 className="text-xl font-semibold text-zinc-900">{selectedAlbum.title} 预览区</h3>
-                      <p className="text-sm text-zinc-500">大图缩略图布局，更适合宽屏相册管理。</p>
-                    </div>
-                    <Button asChild type="button" variant="outline">
-                      <Link href={`/albums/${selectedAlbum.shortId ?? selectedAlbum.id}`}>打开公开页</Link>
-                    </Button>
-                  </div>
-
-                  <div className="flex flex-wrap gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
-                    <span>图片总数：{selectedAlbum.images.length}</span>
-                    <span>已选中：{selectedCurrentAlbumImageIds.length}</span>
-                    <span>
-                      快捷键：<span className="font-medium text-zinc-900">A</span> 全选，<span className="font-medium text-zinc-900">Esc</span> 清空
-                    </span>
-                  </div>
-
-                  {selectedAlbum.images.length ? (
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6">
-                      {selectedAlbum.images.map((image) => (
-                        <div key={image.id} className="group relative aspect-square overflow-hidden rounded-2xl bg-zinc-100 shadow-sm">
-                          <input
-                            type="checkbox"
-                            className="absolute right-3 top-3 z-20 h-4 w-4 rounded border-zinc-300"
-                            checked={Boolean(selectedAlbumImages[image.id])}
-                            onChange={(event) => {
-                              setSelectedAlbumImages((prev) => {
-                                const next = { ...prev };
-                                if (event.target.checked) {
-                                  next[image.id] = true;
-                                } else {
-                                  delete next[image.id];
-                                }
-                                return next;
-                              });
-                            }}
-                          />
-                          <Image src={image.cdnUrl} alt={image.storageKey} fill className="object-cover" unoptimized />
-
-                          <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/45" />
-                          <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col gap-2 p-3 opacity-0 transition group-hover:opacity-100">
-                            <div className="grid grid-cols-2 gap-2">
-                              <Button type="button" size="sm" variant="secondary" onClick={() => copyOriginal(image.cdnUrl)}>
-                                复制链接
-                              </Button>
-                              <Button type="button" size="sm" variant="secondary" onClick={() => copyHtml(image.cdnUrl)}>
-                                复制 HTML
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="secondary"
-                                className="col-span-2"
-                                onClick={() => copyMarkdown(image.cdnUrl)}
-                              >
-                                复制 Markdown
-                              </Button>
-                            </div>
-
-                            <div className="flex gap-2">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button type="button" size="sm" variant="outline" className="flex-1 bg-white/95">
-                                    移动到
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => moveSingleImage(image.id, null)}>不放入相册</DropdownMenuItem>
-                                  {albums.map((album) => (
-                                    <DropdownMenuItem key={album.id} onClick={() => moveSingleImage(image.id, album.id)}>
-                                      {album.title}
-                                    </DropdownMenuItem>
-                                  ))}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="destructive"
-                                className="bg-white/95 text-red-600 hover:bg-red-50"
-                                onClick={async () => {
-                                  const response = await fetch(`/api/images/${image.id}`, { method: "DELETE" });
-                                  const data = (await response.json()) as { error?: string };
-                                  if (!response.ok) {
-                                    toast.error(data.error ?? "Delete failed.");
-                                    return;
-                                  }
-                                  toast.success("Image deleted.");
-                                  router.refresh();
-                                }}
-                              >
-                                删除
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-sm text-zinc-500">
-                      当前相册还没有图片。
-                    </div>
-                  )}
                 </div>
               ) : null}
 
