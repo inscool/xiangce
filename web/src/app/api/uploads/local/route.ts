@@ -22,13 +22,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Local upload endpoint only works in local storage mode." }, { status: 400 });
     }
 
-    const savedStorage = await getSystemSetting<{ localUploadDir?: string }>("storage");
+    const savedStorage = await getSystemSetting<{ driver?: string; localUploadDir?: string }>("storage");
     const uploadDir = savedStorage?.localUploadDir ?? process.env.LOCAL_UPLOAD_DIR ?? "public/uploads";
     if (!uploadDir.startsWith("public/")) {
       return NextResponse.json(
         { error: "本地存储目录必须设置为 public/ 开头，例如 public/uploads。" },
         { status: 400 },
       );
+    }
+
+    const appBaseUrl = process.env.APP_BASE_URL ?? process.env.NEXTAUTH_URL;
+    if (!appBaseUrl) {
+      return NextResponse.json({ error: "请先配置 APP_BASE_URL 或 NEXTAUTH_URL。" }, { status: 400 });
     }
 
     const formData = await request.formData();

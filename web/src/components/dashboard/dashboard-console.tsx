@@ -963,10 +963,9 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
             <CardContent className="space-y-4">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <select
-                  value={selectedAlbumId}
+                  value={selectedAlbum?.id ?? ""}
                   onChange={(event) => {
-                    setSelectedAlbumId(event.target.value);
-                    setSelectedAlbumImages({});
+                    router.push(`/dashboard/albums/${event.target.value}`);
                   }}
                   className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm sm:max-w-xs"
                 >
@@ -1022,7 +1021,7 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-zinc-500">Create an album to use batch link export.</p>
+                <p className="text-sm text-zinc-500">请先创建相册后再使用批量导出链接功能。</p>
               )}
             </CardContent>
           </Card>

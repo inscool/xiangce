@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckSquare, Copy, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -62,9 +62,14 @@ export function AlbumDetailClient({
   const [outputLinks, setOutputLinks] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [previewImageId, setPreviewImageId] = useState<string | null>(null);
+  const [preloadedPreviewIds, setPreloadedPreviewIds] = useState<Record<string, true>>({});
 
   const selectedCount = Object.keys(selected).length;
   const previewImage = images.find((image) => image.id === previewImageId) ?? null;
+  const preloadedPreviewList = useMemo(
+    () => images.filter((image) => preloadedPreviewIds[image.id]),
+    [images, preloadedPreviewIds],
+  );
   const shareLink = typeof window !== "undefined"
     ? `${window.location.origin}/albums/${shortId ?? albumId}`
     : `/albums/${shortId ?? albumId}`;
@@ -89,6 +94,11 @@ export function AlbumDetailClient({
   function cancelSelect() {
     setSelectMode(false);
     setSelected({});
+  }
+
+  function openPreview(imageId: string) {
+    setPreloadedPreviewIds((prev) => ({ ...prev, [imageId]: true }));
+    setPreviewImageId(imageId);
   }
 
   async function moveSelectedTo(targetAlbumId: string | null) {
@@ -209,7 +219,7 @@ export function AlbumDetailClient({
                       enterSelectMode(image.id);
                     }
                   }}
-                  onDoubleClick={() => setPreviewImageId(image.id)}
+                  onDoubleClick={() => openPreview(image.id)}
                 >
                   <div className="relative aspect-square">
                     <Image
@@ -242,6 +252,13 @@ export function AlbumDetailClient({
         ) : (
           <p className="text-sm text-zinc-500">当前相册还没有图片。</p>
         )}
+
+        <div className="sr-only">
+          {preloadedPreviewList.map((image) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={image.id} src={image.cdnUrl} alt="preload" loading="eager" decoding="async" />
+          ))}
+        </div>
       </section>
 
       <Dialog open={Boolean(previewImage)} onOpenChange={(open) => !open && setPreviewImageId(null)}>
@@ -251,7 +268,14 @@ export function AlbumDetailClient({
               <DialogTitle>图片预览</DialogTitle>
               <DialogDescription>{previewImage.storageKey}</DialogDescription>
               <div className="relative aspect-square overflow-hidden rounded-xl bg-zinc-100">
-                <Image src={previewImage.cdnUrl} alt="Preview" fill className="object-contain" unoptimized />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={previewImage.cdnUrl}
+                  alt="Preview"
+                  className="h-full w-full object-contain"
+                  loading="eager"
+                  decoding="async"
+                />
               </div>
             </div>
           ) : null}
@@ -334,7 +358,6 @@ export function AlbumDetailClient({
 
       {outputLinks ? (
         <div className="fixed right-4 bottom-24 z-50 max-w-sm rounded-xl border border-zinc-200 bg-white p-4 shadow-xl">
-          <p className="mb-2 text-sm font-medium text-zinc-900">Direct Link List</p>
           <p className="mb-2 text-sm font-medium text-zinc-900">直链列表</p>
           <textarea
             readOnly
