@@ -50,7 +50,7 @@ export function DashboardShell({ activeSection, user, children }: Props) {
 
             <nav className="space-y-1">
               {dashboardSections.map((item) => {
-                if ((item.key === "admin" || item.key === "inquiries") && user.role !== UserRole.ADMIN) {
+                if (item.key === "admin" && user.role !== UserRole.ADMIN) {
                   return null;
                 }
 

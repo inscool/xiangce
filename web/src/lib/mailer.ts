@@ -14,6 +14,7 @@ type InquiryNotificationInput = {
     name: string | null;
     email: string;
     whatsapp: string | null;
+    ipAddress: string | null;
     message: string;
     createdAt: Date;
   };
@@ -94,6 +95,7 @@ export async function sendInquiryNotificationEmail(input: InquiryNotificationInp
   const subject = `[Xiangce] New inquiry for @${input.ownerUsername}`;
   const safeName = input.inquiry.name || "(not provided)";
   const safeWhatsapp = input.inquiry.whatsapp || "(not provided)";
+  const safeIpAddress = input.inquiry.ipAddress || "(unknown)";
 
   await transporter.sendMail({
     from: config.from,
@@ -104,6 +106,7 @@ export async function sendInquiryNotificationEmail(input: InquiryNotificationInp
       `Name: ${safeName}`,
       `Email: ${input.inquiry.email}`,
       `WhatsApp: ${safeWhatsapp}`,
+      `IP Address: ${safeIpAddress}`,
       "Message:",
       input.inquiry.message,
       `Submitted at: ${input.inquiry.createdAt.toISOString()}`,
@@ -113,6 +116,7 @@ export async function sendInquiryNotificationEmail(input: InquiryNotificationInp
       <p><strong>Name:</strong> ${safeName}</p>
       <p><strong>Email:</strong> ${input.inquiry.email}</p>
       <p><strong>WhatsApp:</strong> ${safeWhatsapp}</p>
+      <p><strong>IP Address:</strong> ${safeIpAddress}</p>
       <p><strong>Message:</strong></p>
       <p style="white-space:pre-wrap">${input.inquiry.message}</p>
       <p><strong>Submitted at:</strong> ${input.inquiry.createdAt.toISOString()}</p>

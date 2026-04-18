@@ -113,18 +113,18 @@ export async function getAdminDashboardData(role: UserRole) {
   return { adminUsers, userGroups };
 }
 
-export async function getAdminInquiries(role: UserRole) {
-  if (role !== UserRole.ADMIN) {
-    return [];
-  }
+export async function getDashboardInquiries(userId: string, role: UserRole) {
+  const where = role === UserRole.ADMIN ? {} : { userId };
 
   return prisma.inquiry.findMany({
+    where,
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
       name: true,
       email: true,
       whatsapp: true,
+      ipAddress: true,
       message: true,
       status: true,
       processedAt: true,

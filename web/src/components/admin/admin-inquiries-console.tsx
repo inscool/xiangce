@@ -12,6 +12,7 @@ type InquiryItem = {
   name: string | null;
   email: string;
   whatsapp: string | null;
+  ipAddress: string | null;
   message: string;
   status: "NEW" | "PROCESSED";
   processedAt: string | null;
@@ -19,10 +20,11 @@ type InquiryItem = {
 };
 
 type Props = {
+  mode: "admin" | "user";
   inquiries: InquiryItem[];
 };
 
-export function AdminInquiriesConsole({ inquiries }: Props) {
+export function AdminInquiriesConsole({ mode, inquiries }: Props) {
   const router = useRouter();
   const [workingId, setWorkingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -76,8 +78,10 @@ export function AdminInquiriesConsole({ inquiries }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>留言管理</CardTitle>
-        <CardDescription>查看客户询盘，标记处理状态，或删除无效留言。</CardDescription>
+        <CardTitle>{mode === "admin" ? "全局留言管理" : "我的留言"}</CardTitle>
+        <CardDescription>
+          {mode === "admin" ? "查看全站客户询盘，标记处理状态，或删除无效留言。" : "查看提交给你主页和相册的客户留言。"}
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {message ? <p className="text-sm text-zinc-600">{message}</p> : null}
@@ -89,47 +93,50 @@ export function AdminInquiriesConsole({ inquiries }: Props) {
             <div key={item.id} className="rounded-xl border border-zinc-200 bg-white p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm text-zinc-500">@{item.username}</p>
+                  {mode === "admin" ? <p className="text-sm text-zinc-500">@{item.username}</p> : null}
                   <p className="text-sm text-zinc-800">
                     {item.name || "(未填写姓名)"} · {item.email}
                   </p>
                   <p className="text-sm text-zinc-600">WhatsApp: {item.whatsapp || "未填写"}</p>
+                  <p className="text-sm text-zinc-600">IP: {item.ipAddress || "未知"}</p>
                   <p className="text-xs text-zinc-500">
                     {new Date(item.createdAt).toLocaleString()} · {item.status === "NEW" ? "待处理" : "已处理"}
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {item.status === "NEW" ? (
+                {mode === "admin" ? (
+                  <div className="flex flex-wrap gap-2">
+                    {item.status === "NEW" ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => updateStatus(item.id, "PROCESSED")}
+                        disabled={workingId === item.id}
+                      >
+                        标记已处理
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateStatus(item.id, "NEW")}
+                        disabled={workingId === item.id}
+                      >
+                        标记待处理
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       size="sm"
-                      onClick={() => updateStatus(item.id, "PROCESSED")}
+                      variant="destructive"
+                      onClick={() => removeInquiry(item.id)}
                       disabled={workingId === item.id}
                     >
-                      标记已处理
+                      删除
                     </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => updateStatus(item.id, "NEW")}
-                      disabled={workingId === item.id}
-                    >
-                      标记待处理
-                    </Button>
-                  )}
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => removeInquiry(item.id)}
-                    disabled={workingId === item.id}
-                  >
-                    删除
-                  </Button>
-                </div>
+                  </div>
+                ) : null}
               </div>
 
               <p className="mt-3 whitespace-pre-wrap rounded-lg bg-zinc-50 p-3 text-sm text-zinc-700">{item.message}</p>

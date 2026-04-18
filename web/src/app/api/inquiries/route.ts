@@ -4,6 +4,25 @@ import { sendInquiryNotificationEmail } from "@/lib/mailer";
 import { prisma } from "@/lib/prisma";
 import { createInquirySchema } from "@/lib/validators/inquiry";
 
+function getClientIp(request: Request) {
+  const cfIp = request.headers.get("cf-connecting-ip")?.trim();
+  if (cfIp) {
+    return cfIp;
+  }
+
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  if (realIp) {
+    return realIp;
+  }
+
+  const forwarded = request.headers.get("x-forwarded-for")?.trim();
+  if (!forwarded) {
+    return null;
+  }
+
+  return forwarded.split(",")[0]?.trim() || null;
+}
+
 export async function POST(request: Request) {
   try {
     const payload = await request.json();
@@ -26,12 +45,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Target user not found." }, { status: 404 });
     }
 
+    const clientIp = getClientIp(request);
+
     const inquiry = await prisma.inquiry.create({
       data: {
         userId: user.id,
         name: parsed.data.name?.trim() || null,
         email: parsed.data.email.trim().toLowerCase(),
         whatsapp: parsed.data.whatsapp?.trim() || null,
+        ipAddress: clientIp,
         message: parsed.data.message.trim(),
       },
       select: {
@@ -39,6 +61,7 @@ export async function POST(request: Request) {
         name: true,
         email: true,
         whatsapp: true,
+        ipAddress: true,
         message: true,
         createdAt: true,
       },
