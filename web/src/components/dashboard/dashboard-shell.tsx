@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { UserRole } from "@prisma/client";
-import { Cog, FolderKanban, Gauge, Users } from "lucide-react";
+import { Cog, FolderKanban, Gauge, MessageSquare, Users } from "lucide-react";
 
 import { SidebarStorageMini } from "@/components/dashboard/sidebar-storage-mini";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ export const dashboardSections = [
   { key: "dashboard", label: "仪表盘", icon: Gauge, href: "/dashboard" },
   { key: "albums", label: "所有相册", icon: FolderKanban, href: "/dashboard/albums" },
   { key: "admin", label: "用户 / 分组", icon: Users, href: "/dashboard/admin" },
+  { key: "inquiries", label: "留言管理", icon: MessageSquare, href: "/dashboard/inquiries" },
   { key: "settings", label: "系统设置", icon: Cog, href: "/dashboard/settings" },
 ] as const;
 
@@ -49,7 +50,7 @@ export function DashboardShell({ activeSection, user, children }: Props) {
 
             <nav className="space-y-1">
               {dashboardSections.map((item) => {
-                if (item.key === "admin" && user.role !== UserRole.ADMIN) {
+                if ((item.key === "admin" || item.key === "inquiries") && user.role !== UserRole.ADMIN) {
                   return null;
                 }
 

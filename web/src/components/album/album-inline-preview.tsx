@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { ProLightbox } from "@/components/ui/pro-lightbox";
 
 type AlbumImage = {
   id: string;
@@ -19,11 +19,19 @@ type Props = {
 };
 
 export function AlbumInlinePreview({ title, shortId, images }: Props) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = images.find((image) => image.id === selectedId) ?? null;
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const slides = useMemo(
+    () => images.map((image) => ({ id: image.id, src: image.cdnUrl, alt: image.storageKey, storageKey: image.storageKey })),
+    [images],
+  );
 
   async function copyDirect(url: string) {
     await navigator.clipboard.writeText(url);
+    setMessage("Direct link copied.");
+    setTimeout(() => setMessage(null), 2000);
   }
 
   return (
@@ -36,35 +44,44 @@ export function AlbumInlinePreview({ title, shortId, images }: Props) {
         </div>
       </div>
 
+      {message ? <p className="mb-3 text-sm text-zinc-600">{message}</p> : null}
+
       <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-        {images.slice(0, 9).map((image) => (
-          <button
-            key={image.id}
-            type="button"
-            onClick={() => setSelectedId(image.id)}
-            className="relative aspect-square overflow-hidden rounded-md bg-zinc-100"
-          >
-            <Image src={image.cdnUrl} alt="Preview" fill className="object-cover" unoptimized />
-          </button>
-        ))}
+        {images.slice(0, 9).map((image) => {
+          const index = slides.findIndex((slide) => slide.id === image.id);
+          return (
+            <button
+              key={image.id}
+              type="button"
+              onClick={() => {
+                setActiveIndex(index < 0 ? 0 : index);
+                setOpen(true);
+              }}
+              className="relative aspect-square overflow-hidden rounded-md bg-zinc-100"
+            >
+              <Image src={image.cdnUrl} alt="Preview" fill className="object-cover" unoptimized />
+            </button>
+          );
+        })}
       </div>
 
-      <Dialog open={Boolean(selected)} onOpenChange={(open) => !open && setSelectedId(null)}>
-        <DialogContent>
-          {selected ? (
-            <div className="space-y-3">
-              <DialogTitle>{title}</DialogTitle>
-              <DialogDescription>{selected.storageKey}</DialogDescription>
-              <div className="relative aspect-square overflow-hidden rounded-md bg-zinc-100">
-                <Image src={selected.cdnUrl} alt="Preview" fill className="object-contain" unoptimized />
-              </div>
-              <Button type="button" onClick={() => copyDirect(selected.cdnUrl)}>
+      <ProLightbox
+        open={open}
+        index={activeIndex}
+        slides={slides}
+        onClose={() => setOpen(false)}
+        onView={setActiveIndex}
+        renderFooter={(slide) => (
+          <div className="mx-auto w-full max-w-4xl rounded-lg bg-black/65 px-4 py-3 text-white backdrop-blur">
+            <p className="truncate text-xs text-zinc-200">{slide.storageKey}</p>
+            <div className="mt-2">
+              <Button type="button" size="sm" className="h-8 bg-white text-zinc-900 hover:bg-zinc-200" onClick={() => copyDirect(slide.src)}>
                 Copy Direct Link
               </Button>
             </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+          </div>
+        )}
+      />
     </section>
   );
 }

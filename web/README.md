@@ -28,7 +28,7 @@ npm run prisma:generate
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:4000`.
 
 ## Required Environment Variables (.env)
 

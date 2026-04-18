@@ -82,6 +82,8 @@ export default async function AlbumPage({ params }: Props) {
         fileSize: image.fileSize.toString(),
       }))}
       isOwner={isOwner}
+      defaultLanguage="en"
+      enableLanguageToggle
       userAlbums={userAlbums.map((a) => ({
         id: a.id,
         shortId: a.shortId,

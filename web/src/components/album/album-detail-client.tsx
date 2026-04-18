@@ -21,6 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ProLightbox } from "@/components/ui/pro-lightbox";
 
 type AlbumImage = {
   id: string;
@@ -43,7 +44,76 @@ type Props = {
   images: AlbumImage[];
   isOwner: boolean;
   userAlbums: AlbumItem[];
+  defaultLanguage?: "zh" | "en";
+  enableLanguageToggle?: boolean;
 };
+
+const copyTextMap = {
+  zh: {
+    breadcrumbAlbums: "相册",
+    imageUnit: "张图片",
+    copyShareLink: "复制分享链接",
+    copiedShareLink: "分享链接已复制。",
+    multiSelect: "多选模式",
+    emptyAlbum: "当前相册还没有图片。",
+    previewTitle: "图片预览",
+    selectedCount: "已选",
+    selectedUnit: "张",
+    moveToAlbum: "移动到相册",
+    ungrouped: "不放入相册",
+    copyLinks: "复制链接",
+    copiedLinks: "直链已复制。",
+    delete: "删除",
+    confirmDeletePrefix: "确认删除",
+    confirmDeleteSuffix: "张图片？",
+    deleteHint: "删除后无法恢复，请确认是否继续。",
+    cancel: "取消",
+    deleting: "删除中...",
+    deleteImages: "删除图片",
+    linksPanelTitle: "直链列表",
+    close: "关闭",
+    moveFailed: "移动图片失败。",
+    movedPrefix: "已移动",
+    movedSuffix: "张图片。",
+    deleteFailedSuffix: "张图片删除失败。",
+    deletedPrefix: "已删除",
+    deletedSuffix: "张图片。",
+    langZh: "中文",
+    langEn: "English",
+  },
+  en: {
+    breadcrumbAlbums: "Albums",
+    imageUnit: "image(s)",
+    copyShareLink: "Copy Share Link",
+    copiedShareLink: "Share link copied.",
+    multiSelect: "Multi Select",
+    emptyAlbum: "No images yet in this album.",
+    previewTitle: "Image Preview",
+    selectedCount: "Selected",
+    selectedUnit: "images",
+    moveToAlbum: "Move to Album",
+    ungrouped: "No Album",
+    copyLinks: "Copy Links",
+    copiedLinks: "Direct links copied.",
+    delete: "Delete",
+    confirmDeletePrefix: "Delete",
+    confirmDeleteSuffix: "images?",
+    deleteHint: "This action cannot be undone.",
+    cancel: "Cancel",
+    deleting: "Deleting...",
+    deleteImages: "Delete Images",
+    linksPanelTitle: "Direct Links",
+    close: "Close",
+    moveFailed: "Failed to move images.",
+    movedPrefix: "Moved",
+    movedSuffix: "images.",
+    deleteFailedSuffix: "images failed to delete.",
+    deletedPrefix: "Deleted",
+    deletedSuffix: "images.",
+    langZh: "中文",
+    langEn: "English",
+  },
+} as const;
 
 export function AlbumDetailClient({
   albumId,
@@ -53,6 +123,8 @@ export function AlbumDetailClient({
   images,
   isOwner,
   userAlbums,
+  defaultLanguage = "zh",
+  enableLanguageToggle = false,
 }: Props) {
   const router = useRouter();
 
@@ -61,18 +133,25 @@ export function AlbumDetailClient({
   const [moving, setMoving] = useState(false);
   const [outputLinks, setOutputLinks] = useState("");
   const [deleting, setDeleting] = useState(false);
-  const [previewImageId, setPreviewImageId] = useState<string | null>(null);
-  const [preloadedPreviewIds, setPreloadedPreviewIds] = useState<Record<string, true>>({});
+  const [language, setLanguage] = useState<"zh" | "en">(defaultLanguage);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState(0);
 
   const selectedCount = Object.keys(selected).length;
-  const previewImage = images.find((image) => image.id === previewImageId) ?? null;
-  const preloadedPreviewList = useMemo(
-    () => images.filter((image) => preloadedPreviewIds[image.id]),
-    [images, preloadedPreviewIds],
+  const lightboxSlides = useMemo(
+    () =>
+      images.map((image) => ({
+        id: image.id,
+        src: image.cdnUrl,
+        alt: image.storageKey,
+        storageKey: image.storageKey,
+      })),
+    [images],
   );
   const shareLink = typeof window !== "undefined"
     ? `${window.location.origin}/albums/${shortId ?? albumId}`
     : `/albums/${shortId ?? albumId}`;
+  const copyText = copyTextMap[language];
 
   function toggleSelect(imageId: string) {
     setSelected((prev) => {
@@ -97,8 +176,9 @@ export function AlbumDetailClient({
   }
 
   function openPreview(imageId: string) {
-    setPreloadedPreviewIds((prev) => ({ ...prev, [imageId]: true }));
-    setPreviewImageId(imageId);
+    const index = images.findIndex((item) => item.id === imageId);
+    setPreviewIndex(index < 0 ? 0 : index);
+    setPreviewOpen(true);
   }
 
   async function moveSelectedTo(targetAlbumId: string | null) {
@@ -114,10 +194,10 @@ export function AlbumDetailClient({
       });
       const data = (await res.json()) as { error?: string; updated?: number };
       if (!res.ok) {
-        toast.error(data.error ?? "移动图片失败。");
+        toast.error(data.error ?? copyText.moveFailed);
         return;
       }
-      toast.success(`已移动 ${data.updated ?? imageIds.length} 张图片。`);
+      toast.success(`${copyText.movedPrefix} ${data.updated ?? imageIds.length} ${copyText.movedSuffix}`);
       setSelectMode(false);
       setSelected({});
       router.refresh();
@@ -133,7 +213,7 @@ export function AlbumDetailClient({
     const links = targets.map((img) => img.cdnUrl).join("\n");
     setOutputLinks(links);
     await navigator.clipboard.writeText(links);
-    toast.success("直链已复制。");
+    toast.success(copyText.copiedLinks);
   }
 
   async function deleteSelected() {
@@ -150,9 +230,9 @@ export function AlbumDetailClient({
 
       const failed = results.filter((r) => r.status === "rejected" || !((r as PromiseFulfilledResult<Response>).value.ok));
       if (failed.length) {
-        toast.error(`${failed.length} 张图片删除失败。`);
+        toast.error(`${failed.length} ${copyText.deleteFailedSuffix}`);
       } else {
-        toast.success(`已删除 ${imageIds.length} 张图片。`);
+        toast.success(`${copyText.deletedPrefix} ${imageIds.length} ${copyText.deletedSuffix}`);
       }
 
       setSelectMode(false);
@@ -172,23 +252,41 @@ export function AlbumDetailClient({
               <Link href={`/${ownerUsername}`} className="underline-offset-4 hover:underline">
                 @{ownerUsername}
               </Link>
-              <span> / Albums</span>
+              <span> / {copyText.breadcrumbAlbums}</span>
             </p>
             <h1 className="text-3xl font-semibold text-zinc-900">{title}</h1>
-            <p className="text-zinc-600">{images.length} image(s)</p>
+            <p className="text-zinc-600">{images.length} {copyText.imageUnit}</p>
           </div>
 
           <div className="flex flex-wrap gap-2">
+            {enableLanguageToggle ? (
+              <div className="inline-flex overflow-hidden rounded-md border border-zinc-200 bg-white">
+                <button
+                  type="button"
+                  className={`px-3 py-1.5 text-xs font-medium ${language === "en" ? "bg-zinc-900 text-white" : "text-zinc-600"}`}
+                  onClick={() => setLanguage("en")}
+                >
+                  {copyText.langEn}
+                </button>
+                <button
+                  type="button"
+                  className={`px-3 py-1.5 text-xs font-medium ${language === "zh" ? "bg-zinc-900 text-white" : "text-zinc-600"}`}
+                  onClick={() => setLanguage("zh")}
+                >
+                  {copyText.langZh}
+                </button>
+              </div>
+            ) : null}
             <Button
               type="button"
               size="sm"
               variant="outline"
               onClick={async () => {
                 await navigator.clipboard.writeText(shareLink);
-                toast.success("分享链接已复制。");
+                toast.success(copyText.copiedShareLink);
               }}
             >
-              复制分享链接
+              {copyText.copyShareLink}
             </Button>
             {isOwner && (
               <Button
@@ -198,7 +296,7 @@ export function AlbumDetailClient({
                 onClick={() => enterSelectMode(images[0]?.id ?? "")}
               >
                 <CheckSquare className="mr-1.5 h-4 w-4" />
-                多选模式
+                {copyText.multiSelect}
               </Button>
             )}
           </div>
@@ -211,15 +309,14 @@ export function AlbumDetailClient({
               return (
                 <div
                   key={image.id}
-                  className={`group relative overflow-hidden rounded-sm bg-zinc-200 ${isOwner ? "cursor-pointer" : ""}`}
+                  className="group relative overflow-hidden rounded-sm bg-zinc-200 cursor-pointer"
                   onClick={() => {
                     if (selectMode) {
                       toggleSelect(image.id);
-                    } else if (isOwner) {
-                      enterSelectMode(image.id);
+                    } else {
+                      openPreview(image.id);
                     }
                   }}
-                  onDoubleClick={() => openPreview(image.id)}
                 >
                   <div className="relative aspect-square">
                     <Image
@@ -250,37 +347,35 @@ export function AlbumDetailClient({
             })}
           </div>
         ) : (
-          <p className="text-sm text-zinc-500">当前相册还没有图片。</p>
+          <p className="text-sm text-zinc-500">{copyText.emptyAlbum}</p>
         )}
-
-        <div className="sr-only">
-          {preloadedPreviewList.map((image) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={image.id} src={image.cdnUrl} alt="preload" loading="eager" decoding="async" />
-          ))}
-        </div>
       </section>
 
-      <Dialog open={Boolean(previewImage)} onOpenChange={(open) => !open && setPreviewImageId(null)}>
-        <DialogContent className="max-w-4xl">
-          {previewImage ? (
-            <div className="space-y-4">
-              <DialogTitle>图片预览</DialogTitle>
-              <DialogDescription>{previewImage.storageKey}</DialogDescription>
-              <div className="relative aspect-square overflow-hidden rounded-xl bg-zinc-100">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={previewImage.cdnUrl}
-                  alt="Preview"
-                  className="h-full w-full object-contain"
-                  loading="eager"
-                  decoding="async"
-                />
-              </div>
+      <ProLightbox
+        open={previewOpen}
+        index={previewIndex}
+        slides={lightboxSlides}
+        onClose={() => setPreviewOpen(false)}
+        onView={setPreviewIndex}
+        renderFooter={(slide) => (
+          <div className="mx-auto w-full max-w-5xl rounded-lg bg-black/65 px-4 py-3 text-white backdrop-blur">
+            <p className="truncate text-xs text-zinc-200">{slide.storageKey}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                className="h-8 bg-white text-zinc-900 hover:bg-zinc-200"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(slide.src);
+                  toast.success(copyText.copiedLinks);
+                }}
+              >
+                {copyText.copyLinks}
+              </Button>
             </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+          </div>
+        )}
+      />
 
       {selectMode && selectedCount > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-200 bg-white/95 shadow-2xl backdrop-blur-sm">
@@ -294,7 +389,7 @@ export function AlbumDetailClient({
                 <X className="h-4 w-4" />
               </button>
               <span className="text-sm font-medium text-zinc-900">
-                已选 {selectedCount} 张
+                {copyText.selectedCount} {selectedCount} {copyText.selectedUnit}
               </span>
             </div>
 
@@ -302,12 +397,12 @@ export function AlbumDetailClient({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button type="button" size="sm" variant="outline" disabled={moving}>
-                    移动到相册
+                    {copyText.moveToAlbum}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => moveSelectedTo(null)}>
-                    不放入相册
+                    {copyText.ungrouped}
                   </DropdownMenuItem>
                   {userAlbums
                     .filter((a) => a.id !== albumId)
@@ -321,24 +416,24 @@ export function AlbumDetailClient({
 
               <Button type="button" size="sm" variant="outline" onClick={copySelectedLinks} disabled={!selectedCount}>
                 <Copy className="mr-1.5 h-4 w-4" />
-                复制链接
+                {copyText.copyLinks}
               </Button>
 
               <Dialog>
                 <DialogTrigger asChild>
                   <Button type="button" size="sm" variant="destructive">
                     <Trash2 className="mr-1.5 h-4 w-4" />
-                    删除
+                    {copyText.delete}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogTitle>确认删除 {selectedCount} 张图片？</DialogTitle>
+                  <DialogTitle>{copyText.confirmDeletePrefix} {selectedCount} {copyText.confirmDeleteSuffix}</DialogTitle>
                   <DialogDescription>
-                    删除后无法恢复，请确认是否继续。
+                    {copyText.deleteHint}
                   </DialogDescription>
                   <div className="flex justify-end gap-2">
                     <Button type="button" variant="outline" onClick={() => cancelSelect()}>
-                      取消
+                      {copyText.cancel}
                     </Button>
                     <Button
                       type="button"
@@ -346,7 +441,7 @@ export function AlbumDetailClient({
                       disabled={deleting}
                       onClick={deleteSelected}
                     >
-                      {deleting ? "删除中..." : "删除图片"}
+                      {deleting ? copyText.deleting : copyText.deleteImages}
                     </Button>
                   </div>
                 </DialogContent>
@@ -358,7 +453,7 @@ export function AlbumDetailClient({
 
       {outputLinks ? (
         <div className="fixed right-4 bottom-24 z-50 max-w-sm rounded-xl border border-zinc-200 bg-white p-4 shadow-xl">
-          <p className="mb-2 text-sm font-medium text-zinc-900">直链列表</p>
+          <p className="mb-2 text-sm font-medium text-zinc-900">{copyText.linksPanelTitle}</p>
           <textarea
             readOnly
             value={outputLinks}
@@ -369,7 +464,7 @@ export function AlbumDetailClient({
             className="mt-2 text-xs text-zinc-500 underline"
             onClick={() => setOutputLinks("")}
           >
-            关闭
+            {copyText.close}
           </button>
         </div>
       ) : null}

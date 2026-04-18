@@ -117,7 +117,7 @@ npm run build
 ### 8. Start PM2 on port 4000
 
 ```bash
-PORT=4000 pm2 start npm --name xiangce -- run start
+pm2 start npm --name xiangce -- run start
 pm2 save
 ```
 
@@ -163,7 +163,7 @@ pm2 restart xiangce --update-env
 ```bash
 pm2 delete xiangce
 cd /www/wwwroot/xiangce/web
-PORT=4000 pm2 start npm --name xiangce -- run start
+pm2 start npm --name xiangce -- run start
 pm2 save
 ```
 

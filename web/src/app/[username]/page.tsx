@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ImageGridLightbox } from "@/components/profile/image-grid-lightbox";
+import { ContactMeForm } from "@/components/profile/contact-me-form";
 import { authOptions } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { parseSocialLinks } from "@/lib/social-links";
@@ -107,6 +108,10 @@ export default async function ProfilePage({ params }: Props) {
           ) : (
             <p className="text-sm text-zinc-500">No images uploaded yet.</p>
           )}
+        </section>
+
+        <section className="mt-8">
+          <ContactMeForm username={user.username} />
         </section>
       </section>
     </main>

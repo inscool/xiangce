@@ -18,6 +18,11 @@ enum AlbumVisibility {
   PRIVATE
 }
 
+enum InquiryStatus {
+  NEW
+  PROCESSED
+}
+
 model User {
   id              String    @id @default(cuid())
   username        String    @unique
@@ -34,6 +39,7 @@ model User {
   emailVerifiedAt DateTime?
   images          Image[]
   albums          Album[]
+  inquiries       Inquiry[]
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -100,4 +106,22 @@ model SystemSetting {
   value     Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Inquiry {
+  id          String       @id @default(cuid())
+  name        String?
+  email       String
+  whatsapp    String?
+  message     String
+  status      InquiryStatus @default(NEW)
+  processedAt DateTime?
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }

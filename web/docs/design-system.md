@@ -46,12 +46,13 @@ Examples:
 
 ### Public Pages
 
-All public pages should use English:
+Public pages follow audience-based language rules:
 
-- `/:username`
-- `/albums/[shortId]`
-- `/album/[id]`
-- public dialogs / protection gate / album actions
+- Landing page (`/`) can use Chinese for domestic operators.
+- Shared album pages should default to English for external clients.
+- Shared album pages should support Chinese/English switching when possible.
+- Profile pages can stay English-first for international visitors.
+- Public dialogs / protection gate / album actions should align with the active page language.
 
 Examples:
 
@@ -60,7 +61,8 @@ Examples:
 - `Open Album`
 - `No images yet`
 
-Do not mix Chinese and English on the same visitor-facing page unless there is a strong business reason.
+Do not mix Chinese and English randomly on the same visitor-facing page.
+If bilingual support is needed, provide an explicit language switch instead of mixed inline text.
 
 ## Layout Principles
 

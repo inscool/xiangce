@@ -110,7 +110,6 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
   const [moving, setMoving] = useState(false);
 
   const [selectedAlbumImages, setSelectedAlbumImages] = useState<Record<string, true>>({});
-  const [outputLinks, setOutputLinks] = useState("");
   const [inlinePreviewAlbumId] = useState<string | null>(null);
   const [albumSearch, setAlbumSearch] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -308,56 +307,6 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
     toast.success("相册分享链接已复制。");
   }
 
-  async function moveSingleImage(imageId: string, toAlbumId: string | null) {
-    const response = await fetch("/api/images/move", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageIds: [imageId], albumId: toAlbumId }),
-    });
-    const data = (await response.json()) as { error?: string };
-    if (!response.ok) {
-      toast.error(data.error ?? "移动图片失败。");
-      return;
-    }
-
-    toast.success("图片已移动。");
-    router.refresh();
-  }
-
-  async function copyOriginal(url: string) {
-    await navigator.clipboard.writeText(url);
-    toast.success("原始链接已复制。");
-  }
-
-  async function copyHtml(url: string) {
-    await navigator.clipboard.writeText(`<img src="${url}" alt="image" />`);
-    toast.success("HTML 代码已复制。");
-  }
-
-  async function copyMarkdown(url: string) {
-    await navigator.clipboard.writeText(`![image](${url})`);
-    toast.success("Markdown 代码已复制。");
-  }
-
-  async function copyAlbumLinks() {
-    if (!selectedAlbum) {
-      toast.error("当前未选择相册。");
-      return;
-    }
-
-    const selectedIds = Object.keys(selectedAlbumImages);
-    const targets = selectedAlbum.images.filter((image) => selectedIds.includes(image.id));
-    if (!targets.length) {
-      toast.error("请先在该相册中选择图片。");
-      return;
-    }
-
-    const links = targets.map((image) => image.cdnUrl).join("\n");
-    setOutputLinks(links);
-    await navigator.clipboard.writeText(links);
-    toast.success("直链已复制。");
-  }
-
   async function copyCurrentAlbumSelectedLinks() {
     if (!selectedAlbum) {
       return;
@@ -371,42 +320,7 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
 
     const links = targets.map((image) => image.cdnUrl).join("\n");
     await navigator.clipboard.writeText(links);
-    setOutputLinks(links);
     toast.success("已复制选中图片直链。");
-  }
-
-  async function copyCurrentAlbumSelectedHtml() {
-    if (!selectedAlbum) {
-      return;
-    }
-
-    const targets = selectedAlbum.images.filter((image) => selectedCurrentAlbumImageIds.includes(image.id));
-    if (!targets.length) {
-      toast.error("请先选择图片。");
-      return;
-    }
-
-    const html = targets.map((image) => `<img src="${image.cdnUrl}" alt="image" />`).join("\n");
-    await navigator.clipboard.writeText(html);
-    setOutputLinks(html);
-    toast.success("已复制选中图片 HTML 代码。");
-  }
-
-  async function copyCurrentAlbumSelectedMarkdown() {
-    if (!selectedAlbum) {
-      return;
-    }
-
-    const targets = selectedAlbum.images.filter((image) => selectedCurrentAlbumImageIds.includes(image.id));
-    if (!targets.length) {
-      toast.error("请先选择图片。");
-      return;
-    }
-
-    const markdown = targets.map((image) => `![image](${image.cdnUrl})`).join("\n");
-    await navigator.clipboard.writeText(markdown);
-    setOutputLinks(markdown);
-    toast.success("已复制选中图片 Markdown 代码。");
   }
 
   async function moveCurrentAlbumSelected(toAlbumId: string | null) {
@@ -797,12 +711,6 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
                     <Button type="button" variant="outline" size="sm" onClick={copyCurrentAlbumSelectedLinks}>
                       批量复制链接
                     </Button>
-                    <Button type="button" variant="outline" size="sm" onClick={copyCurrentAlbumSelectedHtml}>
-                      复制 HTML
-                    </Button>
-                    <Button type="button" variant="outline" size="sm" onClick={copyCurrentAlbumSelectedMarkdown}>
-                      复制 Markdown
-                    </Button>
                     <Button type="button" variant="destructive" size="sm" onClick={deleteCurrentAlbumSelected}>
                       批量删除
                     </Button>
@@ -891,7 +799,7 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
 
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                 {images.map((image) => (
-                  <div key={image.id} className="group relative overflow-hidden rounded-md border border-zinc-200">
+                  <div key={image.id} className="relative overflow-hidden rounded-md border border-zinc-200">
                     <input
                       type="checkbox"
                       className="absolute left-2 top-2 z-20 h-4 w-4"
@@ -910,42 +818,6 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
                     />
                     <div className="relative aspect-square bg-zinc-100">
                       <Image src={image.cdnUrl} alt="Library image" fill className="object-cover" unoptimized />
-                    </div>
-
-                    <div className="pointer-events-none absolute inset-0 z-10 bg-black/0 transition group-hover:bg-black/45" />
-                    <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-end gap-1 p-2 opacity-0 transition group-hover:opacity-100">
-                      <div className="pointer-events-auto grid grid-cols-2 gap-1">
-                        <Button type="button" size="sm" variant="secondary" onClick={() => copyOriginal(image.cdnUrl)}>
-                          Copy Link
-                        </Button>
-                        <Button type="button" size="sm" variant="secondary" onClick={() => copyHtml(image.cdnUrl)}>
-                          Copy HTML
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="secondary"
-                          className="col-span-2"
-                          onClick={() => copyMarkdown(image.cdnUrl)}
-                        >
-                          Copy Markdown
-                        </Button>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button type="button" size="sm" variant="outline" className="pointer-events-auto bg-white/90">
-                            Move To Album
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => moveSingleImage(image.id, null)}>不放入相册</DropdownMenuItem>
-                          {albums.map((album) => (
-                            <DropdownMenuItem key={album.id} onClick={() => moveSingleImage(image.id, album.id)}>
-                              {album.title}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </div>
                   </div>
                 ))}
@@ -976,22 +848,9 @@ export function DashboardConsole({ albums, images, activeSection = "albums", foc
                   ))}
                 </select>
 
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button type="button" onClick={copyAlbumLinks} disabled={!selectedAlbum}>
-                      复制选中链接
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogTitle>直链列表</DialogTitle>
-                    <DialogDescription>可直接复制这些链接用于独立站、论坛或其他分发场景。</DialogDescription>
-                    <textarea
-                      readOnly
-                      value={outputLinks}
-                      className="min-h-48 w-full rounded-md border border-zinc-300 bg-zinc-50 p-3 text-xs text-zinc-700"
-                    />
-                  </DialogContent>
-                </Dialog>
+                <Button type="button" onClick={copyCurrentAlbumSelectedLinks} disabled={!selectedCurrentAlbumImageIds.length}>
+                  复制选中链接
+                </Button>
               </div>
 
               {selectedAlbum ? (

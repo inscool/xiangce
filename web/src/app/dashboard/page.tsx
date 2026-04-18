@@ -2,10 +2,11 @@ import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { StorageProgress } from "@/components/dashboard/storage-progress";
 import { formatBytePercent, formatBytes } from "@/lib/format";
-import { getDashboardSessionUser } from "@/lib/dashboard-data";
+import { getDashboardInquiryStats, getDashboardSessionUser } from "@/lib/dashboard-data";
 
 export default async function DashboardPage() {
   const user = await getDashboardSessionUser();
+  const inquiryStats = await getDashboardInquiryStats(user.id, user.role);
   const usedPercent = formatBytePercent(user.usedStorage, user.storageLimit);
   const groupLabel = user.group?.name ? `${user.group.name} 账户` : "免费账户";
 
@@ -14,7 +15,13 @@ export default async function DashboardPage() {
       activeSection="dashboard"
       user={user}
     >
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <DashboardStatCard
+          label="新增留言"
+          value={String(inquiryStats.newInquiries)}
+          helper={`累计 ${inquiryStats.totalInquiries} 条留言`}
+          accent="pulse"
+        />
         <DashboardStatCard
           label="相册数量"
           value={String(user._count.albums)}

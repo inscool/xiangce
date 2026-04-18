@@ -112,3 +112,39 @@ export async function getAdminDashboardData(role: UserRole) {
 
   return { adminUsers, userGroups };
 }
+
+export async function getAdminInquiries(role: UserRole) {
+  if (role !== UserRole.ADMIN) {
+    return [];
+  }
+
+  return prisma.inquiry.findMany({
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      whatsapp: true,
+      message: true,
+      status: true,
+      processedAt: true,
+      createdAt: true,
+      user: {
+        select: {
+          username: true,
+        },
+      },
+    },
+  });
+}
+
+export async function getDashboardInquiryStats(userId: string, role: UserRole) {
+  const where = role === UserRole.ADMIN ? {} : { userId };
+
+  const [newInquiries, totalInquiries] = await Promise.all([
+    prisma.inquiry.count({ where: { ...where, status: "NEW" } }),
+    prisma.inquiry.count({ where }),
+  ]);
+
+  return { newInquiries, totalInquiries };
+}
