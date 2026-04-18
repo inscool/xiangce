@@ -48,7 +48,7 @@ async function getSmtpConfig(): Promise<SmtpConfig> {
   }
 
   const port = Number(saved?.port || process.env.SMTP_PORT || "587");
-  const secure = saved?.secure ?? process.env.SMTP_SECURE === "true" || port === 465;
+  const secure = saved?.secure ?? (process.env.SMTP_SECURE === "true" || port === 465);
   const from = saved?.from?.trim() || process.env.SMTP_FROM || user;
 
   return { host, port, secure, user, pass, from };
