@@ -306,6 +306,12 @@ Services:
 - `xiangce-web` on `http://localhost:4000`
 - `xiangce-db` on `localhost:5432`
 
+Important:
+
+- In Docker Compose mode, `DATABASE_URL` inside container is forced to `postgresql://postgres:postgres@db:5432/opencode_xiangce?schema=public`.
+- This is a separate Docker PostgreSQL instance, not your host machine's old local database unless you explicitly connect to it.
+- If you want to keep using host DB, remove the `DATABASE_URL` override from compose and ensure network access.
+
 ### 3) Common iteration commands
 
 ```bash
