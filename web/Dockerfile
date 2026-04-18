@@ -38,4 +38,4 @@ COPY --from=builder /app/next.config.ts ./next.config.ts
 
 EXPOSE 4000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run start"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npx next start -p 4000 -H 0.0.0.0"]
