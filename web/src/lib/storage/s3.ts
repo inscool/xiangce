@@ -65,6 +65,16 @@ function normalizeLocalPublicPath(uploadDir: string) {
   return `/${normalized}`.replace(/\/+$/, "");
 }
 
+function normalizeLocalUploadDir(uploadDir: string) {
+  const normalized = uploadDir.replace(/\\/g, "/").replace(/^\/+/, "").replace(/\/+$/, "");
+
+  if (normalized === "public" || normalized.startsWith("public/")) {
+    return normalized;
+  }
+
+  return `public/${normalized}`;
+}
+
 export async function getStorageConfig(): Promise<StorageConfig> {
   const savedStorage = await getSystemSetting<{
     driver?: string;
@@ -86,7 +96,8 @@ export async function getStorageConfig(): Promise<StorageConfig> {
       throw new Error("Please configure APP_BASE_URL or NEXTAUTH_URL before using local storage.");
     }
 
-    const uploadDir = savedStorage?.localUploadDir ?? process.env.LOCAL_UPLOAD_DIR ?? "public/uploads";
+    const rawUploadDir = savedStorage?.localUploadDir ?? process.env.LOCAL_UPLOAD_DIR ?? "public/uploads";
+    const uploadDir = normalizeLocalUploadDir(rawUploadDir);
 
     return {
       mode: "local",
