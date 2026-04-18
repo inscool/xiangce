@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: xiangce-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: opencode_xiangce
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - xiangce-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d opencode_xiangce"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: xiangce-web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./web/.env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/opencode_xiangce?schema=public
+      NEXTAUTH_URL: http://localhost:4000
+      APP_BASE_URL: http://localhost:4000
+    ports:
+      - "4000:4000"
+    volumes:
+      - xiangce-uploads:/app/public/uploads
+
+volumes:
+  xiangce-pgdata:
+  xiangce-uploads:

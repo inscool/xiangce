@@ -30,6 +30,72 @@ npm run dev
 
 Open `http://localhost:4000`.
 
+## Docker Local Deployment (Recommended for fast iteration)
+
+Docker files are provided at:
+
+- `../docker-compose.yml`
+- `Dockerfile`
+
+Quick start from repository root:
+
+```bash
+cp web/.env.example web/.env
+docker compose up -d --build
+```
+
+Then open `http://localhost:4000`.
+
+Useful commands:
+
+```bash
+# rebuild only web container after code updates
+docker compose up -d --build web
+
+# view logs
+docker compose logs -f web
+
+# stop all services
+docker compose down
+
+# stop and remove volumes (reset local DB/uploads)
+docker compose down -v
+```
+
+Notes:
+
+- In Docker Compose, `DATABASE_URL` is overridden to use `db` service host automatically.
+- Uploaded files are persisted in docker volume `xiangce-uploads`.
+- Postgres data is persisted in docker volume `xiangce-pgdata`.
+
+## Docker Dev Mode (Hot Reload, no rebuild each edit)
+
+For active development, use the dedicated dev compose file:
+
+```bash
+cp web/.env.example web/.env
+docker compose -f docker-compose.dev.yml up -d
+```
+
+This mode mounts local source code into the container and runs `npm run dev` directly.
+Code edits will trigger Next.js dev reload automatically.
+
+Useful dev commands:
+
+```bash
+# view dev logs
+docker compose -f docker-compose.dev.yml logs -f web
+
+# restart only web dev service
+docker compose -f docker-compose.dev.yml restart web
+
+# stop dev stack
+docker compose -f docker-compose.dev.yml down
+
+# full dev reset (db + node_modules + uploads volumes)
+docker compose -f docker-compose.dev.yml down -v
+```
+
 ## Required Environment Variables (.env)
 
 For local development, copy `.env.example` to `.env` and fill values.

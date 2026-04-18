@@ -284,3 +284,78 @@ Before asking for help, check these first:
 - Did you run `pm2 restart xiangce --update-env`?
 
 If all of the above are correct, the deployment should be stable.
+
+## Docker Compose (Local / Staging)
+
+If you prefer container-based iteration, use the repository-level compose file.
+
+### 1) Prepare env file
+
+```bash
+cp web/.env.example web/.env
+```
+
+### 2) Start all services
+
+```bash
+docker compose up -d --build
+```
+
+Services:
+
+- `xiangce-web` on `http://localhost:4000`
+- `xiangce-db` on `localhost:5432`
+
+### 3) Common iteration commands
+
+```bash
+# rebuild app after code changes
+docker compose up -d --build web
+
+# check app logs
+docker compose logs -f web
+
+# stop containers
+docker compose down
+
+# full reset (database + uploads)
+docker compose down -v
+```
+
+### 4) Data persistence
+
+- PostgreSQL volume: `xiangce-pgdata`
+- Local uploads volume: `xiangce-uploads`
+
+This keeps data between restarts unless you run `docker compose down -v`.
+
+## Docker Compose Dev Mode (Hot Reload)
+
+When you are iterating quickly and need immediate bug checks, use dev compose mode:
+
+```bash
+cp web/.env.example web/.env
+docker compose -f docker-compose.dev.yml up -d
+```
+
+This mode:
+
+- mounts local `web/` source into container
+- runs `npm run dev` in container
+- enables polling-based file watching for Windows/macOS compatibility
+
+Common commands:
+
+```bash
+# logs
+docker compose -f docker-compose.dev.yml logs -f web
+
+# restart web only
+docker compose -f docker-compose.dev.yml restart web
+
+# stop dev containers
+docker compose -f docker-compose.dev.yml down
+
+# full reset
+docker compose -f docker-compose.dev.yml down -v
+```

@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: xiangce-db-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: opencode_xiangce
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - xiangce-pgdata-dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d opencode_xiangce"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  web:
+    image: node:20-alpine
+    container_name: xiangce-web-dev
+    restart: unless-stopped
+    working_dir: /app
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./web/.env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/opencode_xiangce?schema=public
+      NEXTAUTH_URL: http://localhost:4000
+      APP_BASE_URL: http://localhost:4000
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "500"
+    command: sh -c "npm install && npm run prisma:generate && npx prisma migrate deploy && npm run dev"
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./web:/app
+      - xiangce-node-modules-dev:/app/node_modules
+      - xiangce-uploads-dev:/app/public/uploads
+
+volumes:
+  xiangce-pgdata-dev:
+  xiangce-node-modules-dev:
+  xiangce-uploads-dev:
