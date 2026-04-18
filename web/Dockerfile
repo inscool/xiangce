@@ -39,4 +39,4 @@ COPY --from=builder /app/scripts ./scripts
 
 EXPOSE 4000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npx next start -p 4000 -H 0.0.0.0"]
+CMD ["sh", "-c", "npx prisma migrate deploy || npx prisma db push; npx next start -p 4000 -H 0.0.0.0"]
