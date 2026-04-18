@@ -35,6 +35,7 @@ RUN npx prisma generate
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.ts ./next.config.ts
+COPY --from=builder /app/scripts ./scripts
 
 EXPOSE 4000
 
