@@ -311,6 +311,7 @@ Important:
 - In Docker Compose mode, `DATABASE_URL` inside container is forced to `postgresql://postgres:postgres@db:5432/opencode_xiangce?schema=public`.
 - This is a separate Docker PostgreSQL instance, not your host machine's old local database unless you explicitly connect to it.
 - If you want to keep using host DB, remove the `DATABASE_URL` override from compose and ensure network access.
+- `NEXTAUTH_URL` and `APP_BASE_URL` should come from `web/.env` and must be your real server domain/IP, not `localhost`.
 
 ### 3) Common iteration commands
 

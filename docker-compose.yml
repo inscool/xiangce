@@ -30,8 +30,6 @@ services:
       - ./web/.env
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/opencode_xiangce?schema=public
-      NEXTAUTH_URL: http://localhost:4000
-      APP_BASE_URL: http://localhost:4000
       ADMIN_EMAIL: admin@local.dev
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD: admin123
