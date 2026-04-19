@@ -4,6 +4,9 @@ import { ArrowRight, CheckCircle2, Globe2, Link2, MessageCircleMore, PackageOpen
 import { Button } from "@/components/ui/button";
 import { APP_VERSION } from "@/lib/version";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const coreBenefits = [
   {
     title: "一个链接，完整交付",
