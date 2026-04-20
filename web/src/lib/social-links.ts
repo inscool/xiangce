@@ -1,6 +1,7 @@
 type SocialLinks = {
   whatsapp?: string;
   website?: string;
+  email?: string;
 };
 
 function normalizeWebsite(url: string) {
@@ -32,9 +33,11 @@ export function parseSocialLinks(value: unknown): SocialLinks {
   const record = value as Record<string, unknown>;
   const whatsappRaw = record.whatsapp ?? record.WhatsApp;
   const websiteRaw = record.website ?? record.site;
+  const emailRaw = record.email;
 
   const whatsapp = typeof whatsappRaw === "string" ? normalizeWhatsapp(whatsappRaw.trim()) : undefined;
   const website = typeof websiteRaw === "string" ? normalizeWebsite(websiteRaw.trim()) : undefined;
+  const email = typeof emailRaw === "string" && emailRaw.includes("@") ? emailRaw.trim().toLowerCase() : undefined;
 
-  return { whatsapp, website };
+  return { whatsapp, website, email };
 }

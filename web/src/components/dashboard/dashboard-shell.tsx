@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { UserRole } from "@prisma/client";
-import { Cog, FolderKanban, Gauge, MessageSquare, Users } from "lucide-react";
+import { Cog, FolderKanban, Gauge, MessageSquare, UserRound, Users } from "lucide-react";
 
 import { SidebarStorageMini } from "@/components/dashboard/sidebar-storage-mini";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { APP_VERSION } from "@/lib/version";
 
 export const dashboardSections = [
   { key: "dashboard", label: "仪表盘", icon: Gauge, href: "/dashboard" },
+  { key: "profile", label: "主页资料", icon: UserRound, href: "/dashboard/profile" },
   { key: "albums", label: "所有相册", icon: FolderKanban, href: "/dashboard/albums" },
   { key: "admin", label: "用户 / 分组", icon: Users, href: "/dashboard/admin" },
   { key: "inquiries", label: "留言管理", icon: MessageSquare, href: "/dashboard/inquiries" },

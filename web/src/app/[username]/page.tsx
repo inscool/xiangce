@@ -22,6 +22,7 @@ export default async function ProfilePage({ params }: Props) {
     select: {
       id: true,
       username: true,
+      avatarUrl: true,
       bio: true,
       socialLinks: true,
       images: {
@@ -55,8 +56,15 @@ export default async function ProfilePage({ params }: Props) {
     <main className="min-h-screen bg-gradient-to-b from-zinc-50 via-white to-amber-50 pb-10">
       <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         <header className="mb-8 grid gap-6 sm:grid-cols-[128px,minmax(0,1fr)] sm:items-center">
-          <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full bg-zinc-200 text-4xl font-semibold text-zinc-600 sm:mx-0 sm:h-32 sm:w-32">
-            {user.username.slice(0, 1).toUpperCase()}
+          <div className="mx-auto h-28 w-28 overflow-hidden rounded-full bg-zinc-200 sm:mx-0 sm:h-32 sm:w-32">
+            {user.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.avatarUrl} alt={`${user.username} avatar`} className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-4xl font-semibold text-zinc-600">
+                {user.username.slice(0, 1).toUpperCase()}
+              </div>
+            )}
           </div>
           <div className="space-y-4 text-center sm:text-left">
             <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">@{user.username}</h1>
@@ -70,6 +78,11 @@ export default async function ProfilePage({ params }: Props) {
               {links.website ? (
                 <Button asChild size="sm" variant="outline">
                   <a href={links.website} target="_blank" rel="noreferrer">Website</a>
+                </Button>
+              ) : null}
+              {links.email ? (
+                <Button asChild size="sm" variant="outline">
+                  <a href={`mailto:${links.email}`}>Email</a>
                 </Button>
               ) : null}
             </div>
@@ -97,6 +110,7 @@ export default async function ProfilePage({ params }: Props) {
           <h2 className="mb-3 text-lg font-semibold text-zinc-900">Posts</h2>
           {user.images.length ? (
             <ImageGridLightbox
+              username={user.username}
               images={user.images.map((image) => ({
                 id: image.id,
                 cdnUrl: image.cdnUrl,
