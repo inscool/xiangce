@@ -312,6 +312,7 @@ Important:
 - This is a separate Docker PostgreSQL instance, not your host machine's old local database unless you explicitly connect to it.
 - If you want to keep using host DB, remove the `DATABASE_URL` override from compose and ensure network access.
 - `NEXTAUTH_URL` and `APP_BASE_URL` should come from `web/.env` and must be your real server domain/IP, not `localhost`.
+- Docker Compose sets `DISABLE_ADMIN_BOOTSTRAP=true` by default to avoid DB bootstrap checks affecting page stability when DB credentials drift.
 
 ### 3) Common iteration commands
 

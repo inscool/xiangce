@@ -12,6 +12,10 @@ const globalBootstrap = globalThis as unknown as {
 };
 
 async function bootstrapDefaultAdmin() {
+  if (process.env.DISABLE_ADMIN_BOOTSTRAP === "true") {
+    return;
+  }
+
   const count = await prisma.user.count();
   if (count > 0) {
     return;

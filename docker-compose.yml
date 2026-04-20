@@ -30,6 +30,7 @@ services:
       - ./web/.env
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/opencode_xiangce?schema=public
+      DISABLE_ADMIN_BOOTSTRAP: "true"
       ADMIN_EMAIL: admin@local.dev
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD: admin123

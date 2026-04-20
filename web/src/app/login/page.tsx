@@ -2,6 +2,9 @@ import { Suspense } from "react";
 
 import { LoginForm } from "@/components/auth/login-form";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default function LoginPage() {
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-b from-zinc-100 via-white to-amber-50 p-4">
