@@ -98,6 +98,12 @@ export async function getAdminDashboardData(role: UserRole) {
         usedStorage: true,
         storageLimit: true,
         groupId: true,
+        group: {
+          select: {
+            badgeLabel: true,
+            badgeColor: true,
+          },
+        },
       },
     }),
     prisma.userGroup.findMany({
@@ -106,6 +112,8 @@ export async function getAdminDashboardData(role: UserRole) {
         id: true,
         name: true,
         storageLimit: true,
+        badgeLabel: true,
+        badgeColor: true,
       },
     }),
   ]);

@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 const createGroupSchema = z.object({
   name: z.string().trim().min(1, "Group name is required.").max(60),
   storageLimitMb: z.number().int().positive().max(1024 * 1024),
+  badgeLabel: z.string().trim().max(20).optional().or(z.literal("")),
+  badgeColor: z.string().trim().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, "Invalid color").optional().or(z.literal("")),
 });
 
 const MB = 1024n * 1024n;
@@ -29,11 +31,15 @@ export async function POST(request: Request) {
       data: {
         name: parsed.data.name,
         storageLimit: BigInt(parsed.data.storageLimitMb) * MB,
+        badgeLabel: parsed.data.badgeLabel?.trim() || null,
+        badgeColor: parsed.data.badgeColor?.trim() || null,
       },
       select: {
         id: true,
         name: true,
         storageLimit: true,
+        badgeLabel: true,
+        badgeColor: true,
       },
     });
 
@@ -42,6 +48,8 @@ export async function POST(request: Request) {
         id: group.id,
         name: group.name,
         storageLimit: group.storageLimit.toString(),
+        badgeLabel: group.badgeLabel,
+        badgeColor: group.badgeColor,
       },
     });
   } catch (error) {

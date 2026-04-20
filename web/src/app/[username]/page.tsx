@@ -25,6 +25,12 @@ export default async function ProfilePage({ params }: Props) {
       avatarUrl: true,
       bio: true,
       socialLinks: true,
+      group: {
+        select: {
+          badgeLabel: true,
+          badgeColor: true,
+        },
+      },
       images: {
         orderBy: { createdAt: "desc" },
         select: {
@@ -68,6 +74,14 @@ export default async function ProfilePage({ params }: Props) {
           </div>
           <div className="space-y-4 text-center sm:text-left">
             <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">@{user.username}</h1>
+            {user.group?.badgeLabel ? (
+              <span
+                className="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold text-white"
+                style={{ backgroundColor: user.group.badgeColor || "#0ea5e9" }}
+              >
+                {user.group.badgeLabel}
+              </span>
+            ) : null}
             {user.bio ? <p className="text-zinc-600">{user.bio}</p> : <p className="text-zinc-500">No bio yet.</p>}
             <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
               {links.whatsapp ? (

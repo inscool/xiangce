@@ -16,12 +16,16 @@ type AdminUser = {
   usedStorageMb: number;
   storageLimitMb: number;
   groupId: string | null;
+  groupBadgeLabel: string | null;
+  groupBadgeColor: string | null;
 };
 
 type GroupItem = {
   id: string;
   name: string;
   storageLimitMb: number;
+  badgeLabel: string | null;
+  badgeColor: string | null;
 };
 
 type Props = {
@@ -49,6 +53,8 @@ export function AdminUsersConsole({ users, groups }: Props) {
   const [batchGroupId, setBatchGroupId] = useState<string>(groups[0]?.id ?? "");
   const [groupName, setGroupName] = useState("");
   const [groupStorageLimitMb, setGroupStorageLimitMb] = useState("512");
+  const [groupBadgeLabel, setGroupBadgeLabel] = useState("VIP");
+  const [groupBadgeColor, setGroupBadgeColor] = useState("#0ea5e9");
   const [newUser, setNewUser] = useState({ username: "", email: "", password: "", groupId: "" });
 
   const [drafts, setDrafts] = useState<DraftState>(() =>
@@ -132,6 +138,8 @@ export function AdminUsersConsole({ users, groups }: Props) {
         body: JSON.stringify({
           name: groupName,
           storageLimitMb,
+          badgeLabel: groupBadgeLabel,
+          badgeColor: groupBadgeColor,
         }),
       });
 
@@ -142,6 +150,8 @@ export function AdminUsersConsole({ users, groups }: Props) {
       }
 
       setGroupName("");
+      setGroupBadgeLabel("VIP");
+      setGroupBadgeColor("#0ea5e9");
       setUserMessage("用户组已创建。");
       router.refresh();
     } finally {
@@ -273,6 +283,8 @@ export function AdminUsersConsole({ users, groups }: Props) {
               onChange={(event) => setGroupStorageLimitMb(event.target.value)}
               placeholder="容量（MB）"
             />
+            <Input value={groupBadgeLabel} onChange={(event) => setGroupBadgeLabel(event.target.value)} placeholder="徽章文字，如 VIP" />
+            <Input value={groupBadgeColor} onChange={(event) => setGroupBadgeColor(event.target.value)} placeholder="徽章颜色，如 #0ea5e9" />
             <Button type="button" onClick={createGroup} disabled={creatingGroup}>
               {creatingGroup ? "创建中..." : "创建用户组"}
             </Button>
@@ -329,6 +341,14 @@ export function AdminUsersConsole({ users, groups }: Props) {
                     <p className="text-xs text-zinc-500">
                       分组：{groups.find((group) => group.id === user.groupId)?.name ?? "未分组"}
                     </p>
+                    {user.groupBadgeLabel ? (
+                      <span
+                        className="mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+                        style={{ backgroundColor: user.groupBadgeColor || "#0ea5e9" }}
+                      >
+                        {user.groupBadgeLabel}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-3">

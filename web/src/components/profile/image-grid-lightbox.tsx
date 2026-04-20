@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { Bookmark, ChevronLeft, ChevronRight, Heart, MessageCircle, MoreHorizontal, Send, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, Copy, MoreHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -45,47 +45,10 @@ export function ImageGridLightbox({ images, username, canDelete = false }: Props
   const visibleImages = useMemo(() => images.filter((image) => !deletedIds[image.id]), [deletedIds, images]);
   const activeImage = visibleImages[activeIndex] ?? null;
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setOpen(false);
-        return;
-      }
-      if (event.key === "ArrowLeft") {
-        setActiveIndex((prev) => (prev - 1 + visibleImages.length) % visibleImages.length);
-      }
-      if (event.key === "ArrowRight") {
-        setActiveIndex((prev) => (prev + 1) % visibleImages.length);
-      }
-    }
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, visibleImages.length]);
-
   async function copyLink(link: string) {
     await navigator.clipboard.writeText(link);
     setMessage("Link copied.");
     setTimeout(() => setMessage(null), 2000);
-  }
-
-  async function shareCurrent(link: string) {
-    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
-      try {
-        await navigator.share({ title: `@${username} image`, url: link });
-        setMessage("Share opened.");
-        setTimeout(() => setMessage(null), 2000);
-        return;
-      } catch {
-        // no-op
-      }
-    }
-
-    await copyLink(link);
   }
 
   function addComment() {
@@ -135,7 +98,7 @@ export function ImageGridLightbox({ images, username, canDelete = false }: Props
     <>
       {message ? <p className="mb-4 text-sm text-zinc-600">{message}</p> : null}
 
-      <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 sm:gap-2">
+      <div className="grid grid-cols-3 gap-1 md:grid-cols-6">
         {visibleImages.map((image, index) => (
           <button
             key={image.id}
@@ -144,16 +107,17 @@ export function ImageGridLightbox({ images, username, canDelete = false }: Props
               setActiveIndex(index);
               setOpen(true);
             }}
-            className="relative aspect-square overflow-hidden rounded-sm bg-zinc-200"
+            className="relative aspect-square overflow-hidden bg-zinc-200"
           >
             <Image
               src={image.cdnUrl}
               alt="Photo"
               fill
-              sizes="(min-width: 1024px) 33vw, (min-width: 640px) 33vw, 50vw"
+              sizes="(min-width: 1024px) 16vw, (min-width: 640px) 33vw, 50vw"
               className="object-cover"
               unoptimized
             />
+            <span className="absolute right-2 top-2 rounded-full bg-black/50 px-1.5 py-0.5 text-[10px] text-white">1/{visibleImages.length}</span>
           </button>
         ))}
       </div>
@@ -182,13 +146,6 @@ export function ImageGridLightbox({ images, username, canDelete = false }: Props
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
-              <button
-                type="button"
-                className="absolute right-3 top-3 rounded-full bg-black/45 p-2 text-white"
-                onClick={() => setOpen(false)}
-              >
-                <X className="h-5 w-5" />
-              </button>
             </div>
 
             <aside className="hidden w-[420px] flex-col border-l border-zinc-200 lg:flex">
@@ -206,8 +163,9 @@ export function ImageGridLightbox({ images, username, canDelete = false }: Props
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => setMessage("举报功能即将上线")}>举报</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => shareCurrent(activeImage.cdnUrl)}>分享</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => copyLink(activeImage.cdnUrl)}>复制链接</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => copyLink(activeImage.cdnUrl)}>
+                      <Copy className="mr-1 h-4 w-4" />复制链接
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href={`/${username}`}>查看账户</Link>
                     </DropdownMenuItem>
@@ -241,12 +199,6 @@ export function ImageGridLightbox({ images, username, canDelete = false }: Props
               </div>
 
               <div className="border-t border-zinc-200 px-4 py-3">
-                <div className="mb-3 flex items-center gap-4 text-zinc-800">
-                  <Heart className="h-5 w-5" />
-                  <MessageCircle className="h-5 w-5" />
-                  <Send className="h-5 w-5" />
-                  <Bookmark className="ml-auto h-5 w-5" />
-                </div>
                 <div className="flex items-center gap-2">
                   <input
                     value={draft}
