@@ -20,7 +20,33 @@ export function ProfileSettingsForm({ initial }: Props) {
   const router = useRouter();
   const [form, setForm] = useState(initial);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  async function uploadAvatar(file: File) {
+    setUploading(true);
+    setMessage(null);
+    try {
+      const payload = new FormData();
+      payload.append("file", file);
+
+      const response = await fetch("/api/profile/avatar", {
+        method: "POST",
+        body: payload,
+      });
+
+      const data = (await response.json()) as { error?: string; avatarUrl?: string };
+      if (!response.ok || !data.avatarUrl) {
+        setMessage(data.error ?? "头像上传失败");
+        return;
+      }
+
+      setForm((prev) => ({ ...prev, avatarUrl: data.avatarUrl ?? prev.avatarUrl }));
+      setMessage("头像已上传，记得点保存资料。");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function save() {
     setSaving(true);
@@ -50,13 +76,28 @@ export function ProfileSettingsForm({ initial }: Props) {
       <h2 className="text-xl font-semibold text-zinc-900">主页资料设置</h2>
       <p className="mt-1 text-sm text-zinc-600">设置头像、简介和联系方式入口（Website / WhatsApp / Email）。</p>
 
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
-        <div className="space-y-2 md:col-span-2">
+      <div className="mt-5 space-y-4">
+        <div className="space-y-2">
           <label className="text-sm font-medium text-zinc-700">头像链接（Avatar URL）</label>
           <Input value={form.avatarUrl} onChange={(e) => setForm((prev) => ({ ...prev, avatarUrl: e.target.value }))} placeholder="https://..." />
+          <div className="flex items-center gap-2">
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  void uploadAvatar(file);
+                }
+                e.target.value = "";
+              }}
+              className="max-w-sm"
+            />
+            <span className="text-xs text-zinc-500">{uploading ? "上传中..." : "可直接上传头像"}</span>
+          </div>
         </div>
 
-        <div className="space-y-2 md:col-span-2">
+        <div className="space-y-2">
           <label className="text-sm font-medium text-zinc-700">个人简介（Bio）</label>
           <textarea
             value={form.bio}
@@ -77,7 +118,7 @@ export function ProfileSettingsForm({ initial }: Props) {
           <Input value={form.whatsapp} onChange={(e) => setForm((prev) => ({ ...prev, whatsapp: e.target.value }))} placeholder="+86... 或 wa.me/..." />
         </div>
 
-        <div className="space-y-2 md:col-span-2">
+        <div className="space-y-2">
           <label className="text-sm font-medium text-zinc-700">Contact Email</label>
           <Input value={form.email} onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))} placeholder="contact@your-domain.com" />
         </div>

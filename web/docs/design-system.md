@@ -312,6 +312,9 @@ Admin users must be able to:
 
 Admin forms should be vertically aligned and easy to scan.
 
+For backend settings and admin forms, do not use two-column split layouts.
+Use a single-column form flow (top-to-bottom) unless a specific business requirement explicitly demands otherwise.
+
 Do not mix half-grid and full-width form styles randomly on the same page.
 
 ## Interaction Consistency
