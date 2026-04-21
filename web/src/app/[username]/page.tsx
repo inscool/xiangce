@@ -27,6 +27,7 @@ export default async function ProfilePage({ params }: Props) {
         select: {
           badgeLabel: true,
           badgeColor: true,
+          badgeIconUrl: true,
         },
       },
       albums: {
@@ -79,11 +80,17 @@ export default async function ProfilePage({ params }: Props) {
               {user.group?.badgeLabel ? <BadgeCheck className="h-5 w-5 text-sky-500" /> : null}
             </div>
             {user.group?.badgeLabel ? (
-              <span
-                className="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold text-white"
-                style={{ backgroundColor: user.group.badgeColor || "#0ea5e9" }}
-              >
-                {user.group.badgeLabel}
+              <span className="inline-flex items-center gap-1">
+                {user.group.badgeIconUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.group.badgeIconUrl} alt="badge" className="h-5 w-5 rounded-full object-cover" />
+                ) : null}
+                <span
+                  className="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold text-white"
+                  style={{ backgroundColor: user.group.badgeColor || "#0ea5e9" }}
+                >
+                  {user.group.badgeLabel}
+                </span>
               </span>
             ) : null}
             {user.bio ? <p className="text-zinc-600">{user.bio}</p> : <p className="text-zinc-500">No bio yet.</p>}

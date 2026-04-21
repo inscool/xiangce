@@ -53,6 +53,7 @@ model UserGroup {
   storageLimit BigInt
   badgeLabel   String?
   badgeColor   String?
+  badgeIconUrl String?
   users        User[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -84,11 +85,24 @@ model Image {
   albumId    String?
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   album      Album?   @relation(fields: [albumId], references: [id], onDelete: SetNull)
+  comments   ImageComment[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   @@index([userId])
   @@index([albumId])
+}
+
+model ImageComment {
+  id        String   @id @default(cuid())
+  imageId   String
+  image     Image    @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  email     String
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([imageId])
+  @@index([createdAt])
 }
 
 model EmailVerificationToken {

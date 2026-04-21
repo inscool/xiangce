@@ -27,6 +27,7 @@ export default async function DashboardAdminPage() {
           groupId: item.groupId,
           groupBadgeLabel: item.group?.badgeLabel ?? null,
           groupBadgeColor: item.group?.badgeColor ?? null,
+          groupBadgeIconUrl: item.group?.badgeIconUrl ?? null,
         }))}
         groups={userGroups.map((group) => ({
           id: group.id,
@@ -34,6 +35,7 @@ export default async function DashboardAdminPage() {
           storageLimitMb: Number(group.storageLimit / (1024n * 1024n)),
           badgeLabel: group.badgeLabel ?? null,
           badgeColor: group.badgeColor ?? null,
+          badgeIconUrl: group.badgeIconUrl ?? null,
         }))}
       />
     </DashboardShell>

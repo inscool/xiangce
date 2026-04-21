@@ -9,6 +9,7 @@ const createGroupSchema = z.object({
   storageLimitMb: z.number().int().positive().max(1024 * 1024),
   badgeLabel: z.string().trim().max(20).optional().or(z.literal("")),
   badgeColor: z.string().trim().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, "Invalid color").optional().or(z.literal("")),
+  badgeIconUrl: z.string().trim().url("Invalid icon url").optional().or(z.literal("")),
 });
 
 const MB = 1024n * 1024n;
@@ -33,6 +34,7 @@ export async function POST(request: Request) {
         storageLimit: BigInt(parsed.data.storageLimitMb) * MB,
         badgeLabel: parsed.data.badgeLabel?.trim() || null,
         badgeColor: parsed.data.badgeColor?.trim() || null,
+        badgeIconUrl: parsed.data.badgeIconUrl?.trim() || null,
       },
       select: {
         id: true,
@@ -40,6 +42,7 @@ export async function POST(request: Request) {
         storageLimit: true,
         badgeLabel: true,
         badgeColor: true,
+        badgeIconUrl: true,
       },
     });
 
@@ -50,6 +53,7 @@ export async function POST(request: Request) {
         storageLimit: group.storageLimit.toString(),
         badgeLabel: group.badgeLabel,
         badgeColor: group.badgeColor,
+        badgeIconUrl: group.badgeIconUrl,
       },
     });
   } catch (error) {

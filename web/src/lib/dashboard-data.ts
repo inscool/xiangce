@@ -102,6 +102,7 @@ export async function getAdminDashboardData(role: UserRole) {
           select: {
             badgeLabel: true,
             badgeColor: true,
+            badgeIconUrl: true,
           },
         },
       },
@@ -114,6 +115,7 @@ export async function getAdminDashboardData(role: UserRole) {
         storageLimit: true,
         badgeLabel: true,
         badgeColor: true,
+        badgeIconUrl: true,
       },
     }),
   ]);

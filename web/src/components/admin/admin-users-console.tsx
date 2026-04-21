@@ -18,6 +18,7 @@ type AdminUser = {
   groupId: string | null;
   groupBadgeLabel: string | null;
   groupBadgeColor: string | null;
+  groupBadgeIconUrl: string | null;
 };
 
 type GroupItem = {
@@ -26,6 +27,7 @@ type GroupItem = {
   storageLimitMb: number;
   badgeLabel: string | null;
   badgeColor: string | null;
+  badgeIconUrl: string | null;
 };
 
 type Props = {
@@ -55,6 +57,7 @@ export function AdminUsersConsole({ users, groups }: Props) {
   const [groupStorageLimitMb, setGroupStorageLimitMb] = useState("512");
   const [groupBadgeLabel, setGroupBadgeLabel] = useState("VIP");
   const [groupBadgeColor, setGroupBadgeColor] = useState("#0ea5e9");
+  const [groupBadgeIconUrl, setGroupBadgeIconUrl] = useState("");
   const [newUser, setNewUser] = useState({ username: "", email: "", password: "", groupId: "" });
 
   const [drafts, setDrafts] = useState<DraftState>(() =>
@@ -140,6 +143,7 @@ export function AdminUsersConsole({ users, groups }: Props) {
           storageLimitMb,
           badgeLabel: groupBadgeLabel,
           badgeColor: groupBadgeColor,
+          badgeIconUrl: groupBadgeIconUrl,
         }),
       });
 
@@ -152,11 +156,31 @@ export function AdminUsersConsole({ users, groups }: Props) {
       setGroupName("");
       setGroupBadgeLabel("VIP");
       setGroupBadgeColor("#0ea5e9");
+      setGroupBadgeIconUrl("");
       setUserMessage("用户组已创建。");
       router.refresh();
     } finally {
       setCreatingGroup(false);
     }
+  }
+
+  async function uploadBadgeIcon(file: File) {
+    const payload = new FormData();
+    payload.append("file", file);
+
+    const response = await fetch("/api/admin/groups/badge-icon", {
+      method: "POST",
+      body: payload,
+    });
+
+    const data = (await response.json()) as { error?: string; iconUrl?: string };
+    if (!response.ok || !data.iconUrl) {
+      setUserMessage(data.error ?? "徽章图标上传失败。");
+      return;
+    }
+
+    setGroupBadgeIconUrl(data.iconUrl);
+    setUserMessage("徽章图标上传成功。");
   }
 
   async function assignUsersToGroup() {
@@ -274,7 +298,7 @@ export function AdminUsersConsole({ users, groups }: Props) {
 
         <div className="rounded-lg border border-zinc-200 p-3">
           <p className="mb-2 text-sm font-medium text-zinc-900">创建用户组</p>
-          <div className="grid gap-2 sm:grid-cols-3">
+          <div className="space-y-2">
             <Input value={groupName} onChange={(event) => setGroupName(event.target.value)} placeholder="例如：VIP" />
             <Input
               type="number"
@@ -285,6 +309,18 @@ export function AdminUsersConsole({ users, groups }: Props) {
             />
             <Input value={groupBadgeLabel} onChange={(event) => setGroupBadgeLabel(event.target.value)} placeholder="徽章文字，如 VIP" />
             <Input value={groupBadgeColor} onChange={(event) => setGroupBadgeColor(event.target.value)} placeholder="徽章颜色，如 #0ea5e9" />
+            <Input value={groupBadgeIconUrl} onChange={(event) => setGroupBadgeIconUrl(event.target.value)} placeholder="徽章图标 URL" />
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) {
+                  void uploadBadgeIcon(file);
+                }
+                event.target.value = "";
+              }}
+            />
             <Button type="button" onClick={createGroup} disabled={creatingGroup}>
               {creatingGroup ? "创建中..." : "创建用户组"}
             </Button>
@@ -342,12 +378,18 @@ export function AdminUsersConsole({ users, groups }: Props) {
                       分组：{groups.find((group) => group.id === user.groupId)?.name ?? "未分组"}
                     </p>
                     {user.groupBadgeLabel ? (
-                      <span
-                        className="mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-semibold text-white"
-                        style={{ backgroundColor: user.groupBadgeColor || "#0ea5e9" }}
-                      >
-                        {user.groupBadgeLabel}
-                      </span>
+                      <div className="mt-1 inline-flex items-center gap-1">
+                        {user.groupBadgeIconUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={user.groupBadgeIconUrl} alt="badge" className="h-4 w-4 rounded-full object-cover" />
+                        ) : null}
+                        <span
+                          className="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+                          style={{ backgroundColor: user.groupBadgeColor || "#0ea5e9" }}
+                        >
+                          {user.groupBadgeLabel}
+                        </span>
+                      </div>
                     ) : null}
                   </div>
                 </div>

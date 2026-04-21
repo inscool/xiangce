@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Copy, MoreHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,7 @@ type Props = {
 
 type CommentItem = {
   id: string;
-  author: string;
+  email: string;
   text: string;
   createdAt: string;
 };
@@ -39,11 +39,48 @@ export function ImageGridLightbox({ images, username, canDelete = false }: Props
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deletedIds, setDeletedIds] = useState<Record<string, true>>({});
   const [message, setMessage] = useState<string | null>(null);
+  const [commentEmail, setCommentEmail] = useState("");
   const [draft, setDraft] = useState("");
+  const [loadingComments, setLoadingComments] = useState(false);
   const [commentsByImage, setCommentsByImage] = useState<Record<string, CommentItem[]>>({});
 
   const visibleImages = useMemo(() => images.filter((image) => !deletedIds[image.id]), [deletedIds, images]);
   const activeImage = visibleImages[activeIndex] ?? null;
+
+  useEffect(() => {
+    if (!open || !activeImage) {
+      return;
+    }
+    if (commentsByImage[activeImage.id]) {
+      return;
+    }
+
+    setLoadingComments(true);
+    void fetch(`/api/image-comments?imageId=${activeImage.id}`)
+      .then(async (res) => {
+        const data = (await res.json()) as {
+          error?: string;
+          rememberedEmail?: string;
+          comments?: Array<{ id: string; email: string; content: string; createdAt: string }>;
+        };
+        if (!res.ok) {
+          setMessage(data.error ?? "加载留言失败");
+          return;
+        }
+
+        setCommentEmail((prev) => prev || data.rememberedEmail || "");
+        setCommentsByImage((prev) => ({
+          ...prev,
+          [activeImage.id]: (data.comments ?? []).map((item) => ({
+            id: item.id,
+            email: item.email,
+            text: item.content,
+            createdAt: new Date(item.createdAt).toLocaleString(),
+          })),
+        }));
+      })
+      .finally(() => setLoadingComments(false));
+  }, [open, activeImage, commentsByImage]);
 
   async function copyLink(link: string) {
     await navigator.clipboard.writeText(link);
@@ -53,22 +90,40 @@ export function ImageGridLightbox({ images, username, canDelete = false }: Props
 
   function addComment() {
     const text = draft.trim();
-    if (!text || !activeImage) {
+    const email = commentEmail.trim().toLowerCase();
+    if (!text || !activeImage || !email || !email.includes("@")) {
+      setMessage("请输入有效邮箱后再留言。");
       return;
     }
 
-    const next: CommentItem = {
-      id: `${Date.now()}`,
-      author: "visitor",
-      text,
-      createdAt: new Date().toLocaleString(),
-    };
+    void fetch("/api/image-comments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageId: activeImage.id, email, content: text }),
+    }).then(async (res) => {
+      const data = (await res.json()) as {
+        error?: string;
+        comment?: { id: string; email: string; content: string; createdAt: string };
+      };
 
-    setCommentsByImage((prev) => ({
-      ...prev,
-      [activeImage.id]: [next, ...(prev[activeImage.id] ?? [])],
-    }));
-    setDraft("");
+      if (!res.ok || !data.comment) {
+        setMessage(data.error ?? "留言失败");
+        return;
+      }
+
+      const next: CommentItem = {
+        id: data.comment.id,
+        email: data.comment.email,
+        text: data.comment.content,
+        createdAt: new Date(data.comment.createdAt).toLocaleString(),
+      };
+
+      setCommentsByImage((prev) => ({
+        ...prev,
+        [activeImage.id]: [next, ...(prev[activeImage.id] ?? [])],
+      }));
+      setDraft("");
+    });
   }
 
   async function deleteImage(imageId: string) {
@@ -184,11 +239,12 @@ export function ImageGridLightbox({ images, username, canDelete = false }: Props
 
               <div className="flex-1 overflow-y-auto px-4 py-3">
                 <p className="mb-2 text-xs text-zinc-500">留言区</p>
+                {loadingComments ? <p className="mb-2 text-sm text-zinc-500">加载中...</p> : null}
                 {(commentsByImage[activeImage.id] ?? []).length ? (
                   <div className="space-y-3">
                     {(commentsByImage[activeImage.id] ?? []).map((comment) => (
                       <div key={comment.id} className="rounded-lg bg-zinc-50 p-3">
-                        <p className="text-xs text-zinc-500">{comment.author} · {comment.createdAt}</p>
+                        <p className="text-xs text-zinc-500">{comment.email} · {comment.createdAt}</p>
                         <p className="mt-1 text-sm text-zinc-800">{comment.text}</p>
                       </div>
                     ))}
@@ -199,6 +255,14 @@ export function ImageGridLightbox({ images, username, canDelete = false }: Props
               </div>
 
               <div className="border-t border-zinc-200 px-4 py-3">
+                <div className="mb-2">
+                  <input
+                    value={commentEmail}
+                    onChange={(event) => setCommentEmail(event.target.value)}
+                    className="h-10 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
+                    placeholder="留言邮箱（会记住）"
+                  />
+                </div>
                 <div className="flex items-center gap-2">
                   <input
                     value={draft}
