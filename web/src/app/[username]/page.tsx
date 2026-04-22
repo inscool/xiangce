@@ -59,6 +59,12 @@ export default async function ProfilePage({ params }: Props) {
 
   const links = parseSocialLinks(user.socialLinks);
   const domainText = links.website ? links.website.replace(/^https?:\/\//, "") : "not-set";
+  const contactRows = [
+    links.website ? `Domain: ${domainText}` : null,
+    links.email ? `Email: ${links.email}` : null,
+    links.website ? `Website: ${links.website}` : null,
+    links.whatsapp ? `WhatsApp: ${links.whatsapp}` : null,
+  ].filter((item): item is string => Boolean(item));
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-zinc-50 via-white to-amber-50 pb-10">
@@ -94,12 +100,13 @@ export default async function ProfilePage({ params }: Props) {
               </span>
             ) : null}
             {user.bio ? <p className="text-zinc-600">{user.bio}</p> : <p className="text-zinc-500">No bio yet.</p>}
-            <div className="space-y-1 text-sm text-zinc-700">
-              <p>Domain: {domainText}</p>
-              <p>Email: {links.email ?? "not-set"}</p>
-              <p>Website: {links.website ?? "not-set"}</p>
-              <p>WhatsApp: {links.whatsapp ?? "not-set"}</p>
-            </div>
+            {contactRows.length ? (
+              <div className="space-y-1 text-sm text-zinc-700">
+                {contactRows.map((item) => (
+                  <p key={item}>{item}</p>
+                ))}
+              </div>
+            ) : null}
             <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
               {links.whatsapp ? (
                 <Button asChild size="sm" variant="secondary">

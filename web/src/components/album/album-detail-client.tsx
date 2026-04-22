@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckSquare, Copy, Trash2, X } from "lucide-react";
+import { CheckSquare, ChevronLeft, ChevronRight, Copy, MoreHorizontal, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ProLightbox } from "@/components/ui/pro-lightbox";
+
+type CommentItem = {
+  id: string;
+  email: string;
+  text: string;
+  createdAt: string;
+};
 
 type AlbumImage = {
   id: string;
@@ -136,22 +142,54 @@ export function AlbumDetailClient({
   const [language, setLanguage] = useState<"zh" | "en">(defaultLanguage);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
+  const [commentEmail, setCommentEmail] = useState("");
+  const [commentDraft, setCommentDraft] = useState("");
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [commentsByImage, setCommentsByImage] = useState<Record<string, CommentItem[]>>({});
 
   const selectedCount = Object.keys(selected).length;
-  const lightboxSlides = useMemo(
-    () =>
-      images.map((image) => ({
-        id: image.id,
-        src: image.cdnUrl,
-        alt: image.storageKey,
-        storageKey: image.storageKey,
-      })),
-    [images],
-  );
+  const activePreviewImage = images[previewIndex] ?? null;
   const shareLink = typeof window !== "undefined"
     ? `${window.location.origin}/albums/${shortId ?? albumId}`
     : `/albums/${shortId ?? albumId}`;
   const copyText = copyTextMap[language];
+
+  useEffect(() => {
+    if (!previewOpen || !activePreviewImage) {
+      return;
+    }
+
+    if (commentsByImage[activePreviewImage.id]) {
+      return;
+    }
+
+    setLoadingComments(true);
+    void fetch(`/api/image-comments?imageId=${activePreviewImage.id}`)
+      .then(async (response) => {
+        const data = (await response.json()) as {
+          error?: string;
+          rememberedEmail?: string;
+          comments?: Array<{ id: string; email: string; content: string; createdAt: string }>;
+        };
+
+        if (!response.ok) {
+          toast.error(data.error ?? "加载留言失败。");
+          return;
+        }
+
+        setCommentEmail((prev) => prev || data.rememberedEmail || "");
+        setCommentsByImage((prev) => ({
+          ...prev,
+          [activePreviewImage.id]: (data.comments ?? []).map((item) => ({
+            id: item.id,
+            email: item.email,
+            text: item.content,
+            createdAt: new Date(item.createdAt).toLocaleString(),
+          })),
+        }));
+      })
+      .finally(() => setLoadingComments(false));
+  }, [previewOpen, activePreviewImage, commentsByImage]);
 
   function toggleSelect(imageId: string) {
     setSelected((prev) => {
@@ -179,6 +217,44 @@ export function AlbumDetailClient({
     const index = images.findIndex((item) => item.id === imageId);
     setPreviewIndex(index < 0 ? 0 : index);
     setPreviewOpen(true);
+  }
+
+  async function submitComment() {
+    const email = commentEmail.trim().toLowerCase();
+    const content = commentDraft.trim();
+    if (!activePreviewImage || !email || !email.includes("@") || !content) {
+      toast.error("请输入有效邮箱和留言内容。");
+      return;
+    }
+
+    const response = await fetch("/api/image-comments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageId: activePreviewImage.id, email, content }),
+    });
+    const data = (await response.json()) as {
+      error?: string;
+      comment?: { id: string; email: string; content: string; createdAt: string };
+    };
+
+    if (!response.ok || !data.comment) {
+      toast.error(data.error ?? "留言失败。");
+      return;
+    }
+
+    setCommentsByImage((prev) => ({
+      ...prev,
+      [activePreviewImage.id]: [
+        {
+          id: data.comment.id,
+          email: data.comment.email,
+          text: data.comment.content,
+          createdAt: new Date(data.comment.createdAt).toLocaleString(),
+        },
+        ...(prev[activePreviewImage.id] ?? []),
+      ],
+    }));
+    setCommentDraft("");
   }
 
   async function moveSelectedTo(targetAlbumId: string | null) {
@@ -351,31 +427,99 @@ export function AlbumDetailClient({
         )}
       </section>
 
-      <ProLightbox
-        open={previewOpen}
-        index={previewIndex}
-        slides={lightboxSlides}
-        onClose={() => setPreviewOpen(false)}
-        onView={setPreviewIndex}
-        renderFooter={(slide) => (
-          <div className="mx-auto w-full max-w-5xl rounded-lg bg-black/65 px-4 py-3 text-white backdrop-blur">
-            <p className="truncate text-xs text-zinc-200">{slide.storageKey}</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Button
+      {previewOpen && activePreviewImage ? (
+        <div className="fixed inset-0 z-[90] bg-black/75 p-3 sm:p-5" onClick={() => setPreviewOpen(false)}>
+          <div
+            className="mx-auto flex h-full w-full max-w-[1400px] overflow-hidden rounded-2xl bg-white"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="relative flex-1 bg-black">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={activePreviewImage.cdnUrl} alt="Post" className="h-full w-full object-contain" />
+
+              <button
                 type="button"
-                size="sm"
-                className="h-8 bg-white text-zinc-900 hover:bg-zinc-200"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(slide.src);
-                  toast.success(copyText.copiedLinks);
-                }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/45 p-2 text-white"
+                onClick={() => setPreviewIndex((prev) => (prev - 1 + images.length) % images.length)}
               >
-                {copyText.copyLinks}
-              </Button>
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/45 p-2 text-white"
+                onClick={() => setPreviewIndex((prev) => (prev + 1) % images.length)}
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
             </div>
+
+            <aside className="hidden w-[420px] flex-col border-l border-zinc-200 lg:flex">
+              <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-zinc-200" />
+                  <Link href={`/${ownerUsername}`} className="text-sm font-medium text-zinc-900">@{ownerUsername}</Link>
+                </div>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button type="button" className="rounded-md p-1.5 text-zinc-600 hover:bg-zinc-100">
+                      <MoreHorizontal className="h-5 w-5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => toast.success("举报功能即将上线")}>举报</DropdownMenuItem>
+                    <DropdownMenuItem onClick={async () => {
+                      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+                        await navigator.share({ url: activePreviewImage.cdnUrl });
+                      }
+                    }}>分享</DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/${ownerUsername}`}>查看账户</Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-4 py-3">
+                <p className="mb-2 text-xs text-zinc-500">留言区</p>
+                {loadingComments ? <p className="mb-2 text-sm text-zinc-500">加载中...</p> : null}
+                {(commentsByImage[activePreviewImage.id] ?? []).length ? (
+                  <div className="space-y-3">
+                    {(commentsByImage[activePreviewImage.id] ?? []).map((comment) => (
+                      <div key={comment.id} className="rounded-lg bg-zinc-50 p-3">
+                        <p className="text-xs text-zinc-500">{comment.email} · {comment.createdAt}</p>
+                        <p className="mt-1 text-sm text-zinc-800">{comment.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-zinc-500">还没有留言，成为第一条留言吧。</p>
+                )}
+              </div>
+
+              <div className="border-t border-zinc-200 px-4 py-3">
+                <div className="mb-2">
+                  <input
+                    value={commentEmail}
+                    onChange={(event) => setCommentEmail(event.target.value)}
+                    className="h-10 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
+                    placeholder="留言邮箱（会记住）"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    value={commentDraft}
+                    onChange={(event) => setCommentDraft(event.target.value)}
+                    className="h-10 flex-1 rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
+                    placeholder="添加留言..."
+                  />
+                  <Button type="button" size="sm" onClick={submitComment}>发布</Button>
+                </div>
+              </div>
+            </aside>
           </div>
-        )}
-      />
+        </div>
+      ) : null}
 
       {selectMode && selectedCount > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-200 bg-white/95 shadow-2xl backdrop-blur-sm">
