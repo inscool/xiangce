@@ -236,8 +236,9 @@ export function AlbumDetailClient({
       error?: string;
       comment?: { id: string; email: string; content: string; createdAt: string };
     };
+    const createdComment = data.comment;
 
-    if (!response.ok || !data.comment) {
+    if (!response.ok || !createdComment) {
       toast.error(data.error ?? "留言失败。");
       return;
     }
@@ -246,10 +247,10 @@ export function AlbumDetailClient({
       ...prev,
       [activePreviewImage.id]: [
         {
-          id: data.comment.id,
-          email: data.comment.email,
-          text: data.comment.content,
-          createdAt: new Date(data.comment.createdAt).toLocaleString(),
+          id: createdComment.id,
+          email: createdComment.email,
+          text: createdComment.content,
+          createdAt: new Date(createdComment.createdAt).toLocaleString(),
         },
         ...(prev[activePreviewImage.id] ?? []),
       ],
