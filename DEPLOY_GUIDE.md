@@ -313,6 +313,9 @@ Important:
 - If you want to keep using host DB, remove the `DATABASE_URL` override from compose and ensure network access.
 - `NEXTAUTH_URL` and `APP_BASE_URL` should come from `web/.env` and must be your real server domain/IP, not `localhost`.
 - Docker Compose sets `DISABLE_ADMIN_BOOTSTRAP=true` by default to avoid DB bootstrap checks affecting page stability when DB credentials drift.
+- Docker startup now runs `npm run admin:create` automatically to ensure admin account exists and stays verified after updates.
+- `ADMIN_FORCE_RESET=false` (default) means update deployments will NOT overwrite your existing admin password.
+- If you want to reset admin password intentionally, set `ADMIN_FORCE_RESET=true` once, redeploy, then set it back to `false`.
 
 ### 3) Common iteration commands
 

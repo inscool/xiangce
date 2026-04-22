@@ -23,17 +23,22 @@ async function main() {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
+  const forceReset = process.env.ADMIN_FORCE_RESET === "true";
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     const updated = await prisma.user.update({
       where: { email },
       data: {
-        username,
-        password: passwordHash,
         role: UserRole.ADMIN,
-        mustChangePassword: true,
-        emailVerifiedAt: new Date(),
+        emailVerifiedAt: existing.emailVerifiedAt ?? new Date(),
+        ...(forceReset
+          ? {
+              username,
+              password: passwordHash,
+              mustChangePassword: true,
+            }
+          : {}),
       },
       select: {
         id: true,
@@ -43,7 +48,13 @@ async function main() {
       },
     });
 
-    console.log("Updated existing admin:", updated);
+    if (forceReset) {
+      console.log("Updated existing admin with forced password reset:", updated);
+      console.log("[admin:create] ADMIN_FORCE_RESET=true, password has been reset.");
+    } else {
+      console.log("Admin already exists. Kept existing password:", updated);
+      console.log("[admin:create] To reset password intentionally, run with ADMIN_FORCE_RESET=true.");
+    }
     return;
   }
 

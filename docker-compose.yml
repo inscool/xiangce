@@ -34,6 +34,7 @@ services:
       ADMIN_EMAIL: admin@local.dev
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD: admin123
+      ADMIN_FORCE_RESET: "false"
     ports:
       - "4000:4000"
     volumes:
